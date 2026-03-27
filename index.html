@@ -140,16 +140,24 @@ tailwind.config = {
     const [profile, setProfile] = useState(null);
 
     useEffect(() => {
+      // Timeout helper — prevents hanging forever
+      function withTimeout(promise, ms) {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms))
+        ]);
+      }
+
       async function fetchAll() {
         try {
-          // Fetch all views in parallel
-          const [marketRes, methodRes, sectorRes, geoRes, bandRes] = await Promise.all([
+          // Fetch all views in parallel with 10s timeout
+          const [marketRes, methodRes, sectorRes, geoRes, bandRes] = await withTimeout(Promise.all([
             supabase.from('v_market_annual').select('*').order('year'),
             supabase.from('v_market_by_method_annual').select('*').order('year').order('method_name'),
             supabase.from('v_market_by_sector_annual').select('*').order('year').order('subsector'),
             supabase.from('v_market_by_geography_annual').select('*').order('year'),
             supabase.from('v_size_band_benchmarks_annual').select('*').order('year').order('size_band'),
-          ]);
+          ]), 10000);
 
           // Check for errors
           const anyError = [marketRes, methodRes, sectorRes, geoRes, bandRes].find(r => r.error);
@@ -163,12 +171,16 @@ tailwind.config = {
             bands: bandRes.data,
           });
 
-          // Check auth — try local session first
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            setUser(session.user);
-            const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-            if (prof) setProfile(prof);
+          // Check auth separately — don't let it block data loading
+          try {
+            const { data: { session } } = await withTimeout(supabase.auth.getSession(), 3000);
+            if (session?.user) {
+              setUser(session.user);
+              const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+              if (prof) setProfile(prof);
+            }
+          } catch (authErr) {
+            console.warn('Auth check skipped:', authErr.message);
           }
         } catch (err) {
           console.error('Supabase fetch error:', err);
@@ -179,11 +191,10 @@ tailwind.config = {
       }
       fetchAll();
 
-      // Listen for auth token from parent WordPress window (cross-domain iframe)
+      // Auth: listen for token from parent WordPress iframe (non-blocking)
       function handleMessage(event) {
-        // Accept from 2into3.com only
         if (event.origin !== 'https://2into3.com') return;
-        if (event.data?.type === 'supabase-auth' && event.data.access_token && event.data.refresh_token) {
+        if (event.data?.type === 'supabase-auth' && event.data.access_token) {
           supabase.auth.setSession({
             access_token: event.data.access_token,
             refresh_token: event.data.refresh_token,
@@ -194,52 +205,14 @@ tailwind.config = {
                 if (prof) setProfile(prof);
               });
             }
-          });
+          }).catch(() => {});
         }
       }
       window.addEventListener('message', handleMessage);
-
-      // Also check URL hash for token (fallback method)
-      const hash = window.location.hash;
-      if (hash && hash.includes('access_token=')) {
-        const params = new URLSearchParams(hash.substring(1));
-        const at = params.get('access_token');
-        const rt = params.get('refresh_token');
-        if (at && rt) {
-          supabase.auth.setSession({ access_token: at, refresh_token: rt }).then(({ data }) => {
-            if (data?.user) {
-              setUser(data.user);
-              supabase.from('profiles').select('*').eq('id', data.user.id).single().then(({ data: prof }) => {
-                if (prof) setProfile(prof);
-              });
-            }
-          });
-          // Clean the hash
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      }
-
-      // Listen for auth state changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-          if (prof) setProfile(prof);
-        } else {
-          setUser(null);
-          setProfile(null);
-        }
-      });
-
-      // Request auth from parent window (if in iframe)
       if (window.parent !== window) {
         window.parent.postMessage({ type: 'supabase-auth-request' }, 'https://2into3.com');
       }
-
-      return () => {
-        subscription.unsubscribe();
-        window.removeEventListener('message', handleMessage);
-      };
+      return () => window.removeEventListener('message', handleMessage);
     }, []);
 
     return React.createElement(DataContext.Provider, { value: { data, loading, error, user, profile } }, children);
