@@ -11,7 +11,6 @@
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prop-types@15/prop-types.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/recharts@2/umd/Recharts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
 <script>
 tailwind.config = {
@@ -123,11 +122,18 @@ tailwind.config = {
   const { useState, useMemo, useEffect, useRef, createContext, useContext } = React;
 
   /* ═══════════════════════════════════════════
-     SUPABASE CLIENT
+     SUPABASE REST API (no SDK — plain fetch)
      ═══════════════════════════════════════════ */
-  const SUPABASE_URL = 'https://faiyintmsnfjitertgom.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhaXlpbnRtc25maml0ZXJ0Z29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjIzNDAsImV4cCI6MjA4ODE5ODM0MH0.aqC_UZlWOxULLyoUlf2hVZNuOqRbZpaUtMRt63mNwqc';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  const SB_URL = 'https://faiyintmsnfjitertgom.supabase.co/rest/v1';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhaXlpbnRtc25maml0ZXJ0Z29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjIzNDAsImV4cCI6MjA4ODE5ODM0MH0.aqC_UZlWOxULLyoUlf2hVZNuOqRbZpaUtMRt63mNwqc';
+  async function sbFetch(view, orderBy) {
+    const url = `${SB_URL}/${view}?select=*&order=${orderBy}`;
+    const res = await fetch(url, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+    });
+    if (!res.ok) throw new Error(`${view}: ${res.status} ${res.statusText}`);
+    return res.json();
+  }
 
   /* Data context — all views loaded once, shared across tabs */
   const DataContext = createContext(null);
@@ -136,86 +142,30 @@ tailwind.config = {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
 
     useEffect(() => {
-      // Timeout helper — prevents hanging forever
-      function withTimeout(promise, ms) {
-        return Promise.race([
-          promise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms))
-        ]);
-      }
-
       async function fetchAll() {
         try {
-          // Fetch all views in parallel with 10s timeout
-          const [marketRes, methodRes, sectorRes, geoRes, bandRes] = await withTimeout(Promise.all([
-            supabase.from('v_market_annual').select('*').order('year'),
-            supabase.from('v_market_by_method_annual').select('*').order('year').order('method_name'),
-            supabase.from('v_market_by_sector_annual').select('*').order('year').order('subsector'),
-            supabase.from('v_market_by_geography_annual').select('*').order('year'),
-            supabase.from('v_size_band_benchmarks_annual').select('*').order('year').order('size_band'),
-          ]), 10000);
-
-          // Check for errors
-          const anyError = [marketRes, methodRes, sectorRes, geoRes, bandRes].find(r => r.error);
-          if (anyError) throw new Error(anyError.error.message);
-
-          setData({
-            market: marketRes.data,
-            methods: methodRes.data,
-            sectors: sectorRes.data,
-            geography: geoRes.data,
-            bands: bandRes.data,
-          });
-
-          // Check auth separately — don't let it block data loading
-          try {
-            const { data: { session } } = await withTimeout(supabase.auth.getSession(), 3000);
-            if (session?.user) {
-              setUser(session.user);
-              const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-              if (prof) setProfile(prof);
-            }
-          } catch (authErr) {
-            console.warn('Auth check skipped:', authErr.message);
-          }
+          const [market, methods, sectors, geography, bands] = await Promise.all([
+            sbFetch('v_market_annual', 'year'),
+            sbFetch('v_market_by_method_annual', 'year,method_name'),
+            sbFetch('v_market_by_sector_annual', 'year,subsector'),
+            sbFetch('v_market_by_geography_annual', 'year'),
+            sbFetch('v_size_band_benchmarks_annual', 'year,size_band'),
+          ]);
+          setData({ market, methods, sectors, geography, bands });
         } catch (err) {
-          console.error('Supabase fetch error:', err);
+          console.error('Fetch error:', err);
           setError(err.message);
         } finally {
           setLoading(false);
         }
       }
       fetchAll();
-
-      // Auth: listen for token from parent WordPress iframe (non-blocking)
-      function handleMessage(event) {
-        if (event.origin !== 'https://2into3.com') return;
-        if (event.data?.type === 'supabase-auth' && event.data.access_token) {
-          supabase.auth.setSession({
-            access_token: event.data.access_token,
-            refresh_token: event.data.refresh_token,
-          }).then(({ data }) => {
-            if (data?.user) {
-              setUser(data.user);
-              supabase.from('profiles').select('*').eq('id', data.user.id).single().then(({ data: prof }) => {
-                if (prof) setProfile(prof);
-              });
-            }
-          }).catch(() => {});
-        }
-      }
-      window.addEventListener('message', handleMessage);
-      if (window.parent !== window) {
-        window.parent.postMessage({ type: 'supabase-auth-request' }, 'https://2into3.com');
-      }
-      return () => window.removeEventListener('message', handleMessage);
     }, []);
 
-    return React.createElement(DataContext.Provider, { value: { data, loading, error, user, profile } }, children);
+    return React.createElement(DataContext.Provider, { value: { data, loading, error, profile } }, children);
   }
 
   function useData() { return useContext(DataContext); }
@@ -1884,7 +1834,7 @@ tailwind.config = {
     const [tab, setTab] = useState(0);
     const [sideOpen, setSideOpen] = useState(false);
     const [selectedYear, setSelectedYear] = useState('2024');
-    const { data: rawData, loading, error, user, profile } = useData();
+    const { data: rawData, loading, error, profile } = useData();
     const TABS = [OverviewTab, ByMethodTab, BySectorTab, MyOrgTab];
     const ActiveTab = TABS[tab];
 
