@@ -11,6 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prop-types@15/prop-types.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/recharts@2/umd/Recharts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
 <script>
 tailwind.config = {
@@ -119,7 +120,145 @@ tailwind.config = {
 
 <script type="text/babel">
 (() => {
-  const { useState, useMemo, useEffect, useRef } = React;
+  const { useState, useMemo, useEffect, useRef, createContext, useContext } = React;
+
+  /* ═══════════════════════════════════════════
+     SUPABASE CLIENT
+     ═══════════════════════════════════════════ */
+  const SUPABASE_URL = 'https://faiyintmsnfjitertgom.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhaXlpbnRtc25maml0ZXJ0Z29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjIzNDAsImV4cCI6MjA4ODE5ODM0MH0.aqC_UZlWOxULLyoUlf2hVZNuOqRbZpaUtMRt63mNwqc';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  /* Data context — all views loaded once, shared across tabs */
+  const DataContext = createContext(null);
+
+  function DataProvider({ children }) {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
+
+    useEffect(() => {
+      async function fetchAll() {
+        try {
+          // Fetch all views in parallel
+          const [marketRes, methodRes, sectorRes, geoRes, bandRes] = await Promise.all([
+            supabase.from('v_market_annual').select('*').order('year'),
+            supabase.from('v_market_by_method_annual').select('*').order('year').order('method_name'),
+            supabase.from('v_market_by_sector_annual').select('*').order('year').order('subsector'),
+            supabase.from('v_market_by_geography_annual').select('*').order('year'),
+            supabase.from('v_size_band_benchmarks_annual').select('*').order('year').order('size_band'),
+          ]);
+
+          // Check for errors
+          const anyError = [marketRes, methodRes, sectorRes, geoRes, bandRes].find(r => r.error);
+          if (anyError) throw new Error(anyError.error.message);
+
+          setData({
+            market: marketRes.data,
+            methods: methodRes.data,
+            sectors: sectorRes.data,
+            geography: geoRes.data,
+            bands: bandRes.data,
+          });
+
+          // Check auth
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            setUser(session.user);
+            const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+            if (prof) setProfile(prof);
+          }
+        } catch (err) {
+          console.error('Supabase fetch error:', err);
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchAll();
+
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+          if (prof) setProfile(prof);
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
+      });
+      return () => subscription.unsubscribe();
+    }, []);
+
+    return React.createElement(DataContext.Provider, { value: { data, loading, error, user, profile } }, children);
+  }
+
+  function useData() { return useContext(DataContext); }
+
+  /* ═══════════════════════════════════════════
+     TRANSFORM RAW SUPABASE DATA → DASHBOARD FORMAT
+     ═══════════════════════════════════════════ */
+  function transformData(raw, selectedYear) {
+    if (!raw) return null;
+    const yr = Number(selectedYear);
+    const prevYr = yr - 1;
+
+    // Market annual — find current & previous year
+    const currMarket = raw.market.find(r => r.year === yr);
+    const prevMarket = raw.market.find(r => r.year === prevYr);
+    const marketData = raw.market.map(r => ({
+      year: String(r.year), total_income: Number(r.total_income), org_count: r.org_count,
+      avg_income: Number(r.avg_income), total_gifts: r.total_gifts,
+    }));
+
+    // Methods for selected year + previous year
+    const methodsCurr = raw.methods.filter(r => r.year === yr);
+    const methodsPrev = raw.methods.filter(r => r.year === prevYr);
+    const totalMethodIncome = methodsCurr.reduce((s, m) => s + Number(m.total_income), 0);
+    const methodsData = methodsCurr.map(m => {
+      const prev = methodsPrev.find(p => p.method_name === m.method_name);
+      const income = Number(m.total_income);
+      return {
+        method: m.method_name, income, prev: prev ? Number(prev.total_income) : income,
+        pct: totalMethodIncome > 0 ? (income / totalMethodIncome * 100) : 0,
+        gifts: m.total_gifts, cost: 0, avg_gift: m.total_gifts > 0 ? income / m.total_gifts : 0,
+      };
+    }).sort((a, b) => b.income - a.income);
+
+    // Sectors for selected year + previous
+    const sectorsCurr = raw.sectors.filter(r => r.year === yr);
+    const sectorsPrev = raw.sectors.filter(r => r.year === prevYr);
+    const sectorsData = sectorsCurr.map(s => {
+      const prev = sectorsPrev.find(p => p.subsector === s.subsector);
+      return {
+        sector: s.subsector, income: Number(s.total_income), prev: prev ? Number(prev.total_income) : Number(s.total_income),
+        orgs: s.org_count, fte: 0, avg_income: Number(s.avg_income), gifts: s.total_gifts,
+      };
+    }).sort((a, b) => b.income - a.income);
+
+    // Geography
+    const geoData = raw.geography.map(g => ({
+      year: String(g.year), roi: Number(g.roi_total), ni: Number(g.ni_total || 0),
+      uk: Number(g.uk_total), row: Number(g.row_total),
+    }));
+
+    // Size bands for selected year
+    const bandsCurr = raw.bands.filter(r => r.year === yr);
+    const bandsData = bandsCurr.map(b => ({
+      band: b.size_band, label: b.size_band === 'Small' ? 'Under €25K' : b.size_band === 'Medium' ? '€25K–€100K' : 'Over €100K',
+      inc: Number(b.avg_income), orgs: b.org_count, gifts: b.total_gifts,
+      cost: 0, fte: 0, cpe: 0, ag: b.total_gifts > 0 ? Number(b.avg_income) * b.org_count / b.total_gifts : 0, ipf: 0,
+    }));
+
+    return {
+      curr: currMarket ? { total_income: Number(currMarket.total_income), org_count: currMarket.org_count, avg_income: Number(currMarket.avg_income), total_gifts: currMarket.total_gifts } : null,
+      prev: prevMarket ? { total_income: Number(prevMarket.total_income), org_count: prevMarket.org_count, avg_income: Number(prevMarket.avg_income), total_gifts: prevMarket.total_gifts } : null,
+      marketData, methodsData, sectorsData, geoData, bandsData,
+    };
+  }
   const {
     ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -315,7 +454,7 @@ tailwind.config = {
     { icon: 'zap', label: 'My Organisation' },
   ];
 
-  function Sidebar({ tab, setTab, open, setOpen }) {
+  function Sidebar({ tab, setTab, open, setOpen, selectedYear, setSelectedYear, profile }) {
     return (
       <>
         {open && <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)} />}
@@ -333,9 +472,10 @@ tailwind.config = {
             ))}
             <div className="pt-3 mt-3 border-t border-white/10 px-1">
               <div className="text-[9px] font-semibold uppercase tracking-wider text-white/40 mb-2 px-2">Data Year</div>
-              <select className="w-full bg-white/10 border border-white/15 text-white text-xs font-semibold rounded-lg px-3 py-2.5 cursor-pointer appearance-none"
+              <select value={selectedYear || '2024'} onChange={e => setSelectedYear && setSelectedYear(e.target.value)}
+                className="w-full bg-white/10 border border-white/15 text-white text-xs font-semibold rounded-lg px-3 py-2.5 cursor-pointer appearance-none"
                 style={{ backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='%23fff'/%3E%3C/svg%3E\")", backgroundRepeat:'no-repeat', backgroundPosition:'right 10px center' }}>
-                <option>2024</option><option>2025</option>
+                <option value="2024">2024</option><option value="2025">2025</option>
               </select>
             </div>
             {/* User info — will be populated from Supabase auth profile */}
@@ -345,12 +485,12 @@ tailwind.config = {
                   <Icon name="user" size={14} stroke="#ffb548" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-white truncate">{MOCK_ORG.name.split(' ').slice(0,2).join(' ')}</div>
-                  <div className="text-[10px] text-white/50 truncate">{MOCK_ORG.name}</div>
+                  <div className="text-sm font-bold text-white truncate">{profile ? (profile.display_name || profile.email) : 'Guest'}</div>
+                  <div className="text-[10px] text-white/50 truncate">{profile ? (profile.org_name || 'No org set') : 'Not signed in'}</div>
                 </div>
               </a>
               <div className="px-2 mt-1">
-                <span className="inline-block text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-400">Contributor</span>
+                <span className="inline-block text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-400">{profile ? profile.tier : 'free'}</span>
               </div>
             </div>
           </nav>
@@ -362,25 +502,32 @@ tailwind.config = {
   /* ═══════════════════════════════════════════
      TAB 1: OVERVIEW — placeholder
      ═══════════════════════════════════════════ */
-  function OverviewTab() {
-    const curr = MOCK_MARKET[4], prev = MOCK_MARKET[3];
+  function OverviewTab({ liveData }) {
+    // Use live Supabase data if available, fall back to mock
+    const useLive = liveData && liveData.curr;
+    const curr = useLive ? liveData.curr : MOCK_MARKET[4];
+    const prev = useLive && liveData.prev ? liveData.prev : MOCK_MARKET[3];
+    const marketTrend = useLive ? liveData.marketData : MOCK_MARKET.map(d => ({ year: String(d.year), total_income: d.total_income, org_count: d.org_count, avg_income: d.avg_income, total_gifts: d.total_gifts }));
+    const methods = useLive ? liveData.methodsData : MOCK_METHODS;
+    const geoData = useLive ? liveData.geoData : MOCK_GEO;
+
     const yoyInc = pctChange(curr.total_income, prev.total_income);
     const yoyOrg = pctChange(curr.org_count, prev.org_count);
     const yoyAvg = pctChange(curr.avg_income, prev.avg_income);
     const yoyGift = pctChange(curr.total_gifts, prev.total_gifts);
-    const totalMethodIncome = MOCK_METHODS.reduce((s,m) => s + m.income, 0);
-    const topMovers = [...MOCK_METHODS].map(m => ({ ...m, change: pctChange(m.income, m.prev) })).sort((a,b) => b.change - a.change);
-    const pieMethods = MOCK_METHODS.slice(0,8).map(m => ({ name: m.method, value: m.income }));
+    const totalMethodIncome = methods.reduce((s,m) => s + m.income, 0);
+    const topMovers = [...methods].map(m => ({ ...m, change: pctChange(m.income, m.prev) })).sort((a,b) => b.change - a.change);
+    const pieMethods = methods.slice(0,8).map(m => ({ name: m.method, value: m.income }));
 
     return (
       <div className="anim-in space-y-5">
         {/* Row 1: KPI Cards */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
           {[
-            { label: 'Total Fundraised Income', val: fmt(curr.total_income), chg: yoyInc, spark: MOCK_MARKET.map(d => ({ v: d.total_income })), color: '#002d74', accent: 'border-t-brand-600' },
-            { label: 'Participating Organisations', val: fmtN(curr.org_count), chg: yoyOrg, spark: MOCK_MARKET.map(d => ({ v: d.org_count })), color: '#ffb548', accent: 'border-t-gold-400' },
-            { label: 'Average Income per Org', val: fmt(curr.avg_income), chg: yoyAvg, spark: MOCK_MARKET.map(d => ({ v: d.avg_income })), color: '#0e7c86', accent: 'border-t-teal' },
-            { label: 'Total Individual Gifts', val: fmtN(curr.total_gifts), chg: yoyGift, spark: MOCK_MARKET.map(d => ({ v: d.total_gifts })), color: '#059669', accent: 'border-t-ok' },
+            { label: 'Total Fundraised Income', val: fmt(curr.total_income), chg: yoyInc, spark: marketTrend.map(d => ({ v: d.total_income })), color: '#002d74', accent: 'border-t-brand-600' },
+            { label: 'Participating Organisations', val: fmtN(curr.org_count), chg: yoyOrg, spark: marketTrend.map(d => ({ v: d.org_count })), color: '#ffb548', accent: 'border-t-gold-400' },
+            { label: 'Average Income per Org', val: fmt(curr.avg_income), chg: yoyAvg, spark: marketTrend.map(d => ({ v: d.avg_income })), color: '#0e7c86', accent: 'border-t-teal' },
+            { label: 'Total Individual Gifts', val: fmtN(curr.total_gifts), chg: yoyGift, spark: marketTrend.map(d => ({ v: d.total_gifts })), color: '#059669', accent: 'border-t-ok' },
           ].map((k, i) => (
             <div key={i} className={`card p-5 border-t-[3px] ${k.accent} anim-in anim-d${i+1}`}>
               <div className="flex items-start justify-between mb-2">
@@ -401,7 +548,7 @@ tailwind.config = {
               <span className="text-[10px] text-muted">5-year total fundraised income</span>
             </div>
             <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={MOCK_MARKET}>
+              <AreaChart data={marketTrend}>
                 <defs>
                   <linearGradient id="aGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#002d74" stopOpacity={0.18} />
@@ -464,7 +611,7 @@ tailwind.config = {
           <div className="card p-5 anim-in anim-d3">
             <h3 className="font-display text-sm font-bold text-black mb-3">Income by Geography</h3>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={MOCK_GEO}>
+              <BarChart data={geoData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={55} />
@@ -474,7 +621,7 @@ tailwind.config = {
                 <Bar dataKey="uk" name="United Kingdom" stackId="a" fill="#5b80cb" />
                 <Bar dataKey="row" name="Rest of World" stackId="a" fill="#b8c9eb" radius={[4,4,0,0]}
                   label={({ x, y, width, value, index }) => {
-                    const d = MOCK_GEO[index];
+                    const d = geoData[index];
                     if (!d) return null;
                     const total = d.roi + d.uk + d.row;
                     return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="#374151" fontFamily="DM Sans">{fmt(total)}</text>;
@@ -522,13 +669,15 @@ tailwind.config = {
   /* ═══════════════════════════════════════════
      TAB 2: BY METHOD — placeholder
      ═══════════════════════════════════════════ */
-  function ByMethodTab() {
-    const totalInc = MOCK_METHODS.reduce((s,m) => s + m.income, 0);
-    const sorted = [...MOCK_METHODS].sort((a,b) => b.income - a.income);
-    const costSorted = [...MOCK_METHODS].map(m => ({ ...m, cpe: m.cost / m.income })).sort((a,b) => a.cpe - b.cpe);
-    const avgCpe = MOCK_METHODS.reduce((s,m) => s + m.cost, 0) / totalInc;
+  function ByMethodTab({ liveData }) {
+    const useLive = liveData && liveData.methodsData && liveData.methodsData.length > 0;
+    const methods = useLive ? liveData.methodsData : MOCK_METHODS;
+    const totalInc = methods.reduce((s,m) => s + m.income, 0);
+    const sorted = [...methods].sort((a,b) => b.income - a.income);
+    const costSorted = [...methods].map(m => ({ ...m, cpe: m.cost > 0 ? m.cost / m.income : 0 })).sort((a,b) => a.cpe - b.cpe);
+    const avgCpe = methods.reduce((s,m) => s + (m.cost || 0), 0) / (totalInc || 1);
     // Bubble data: gifts vs income, size = avg_gift
-    const bubbleData = MOCK_METHODS.map(m => ({ x: Math.min(m.gifts, 500000), y: m.income, z: Math.min(m.avg_gift, 5000), name: m.method }));
+    const bubbleData = methods.map(m => ({ x: Math.min(m.gifts, 500000), y: m.income, z: Math.min(m.avg_gift, 5000), name: m.method }));
 
     return (
       <div className="anim-in space-y-5">
@@ -669,12 +818,14 @@ tailwind.config = {
   /* ═══════════════════════════════════════════
      TAB 3: BY SECTOR — placeholder
      ═══════════════════════════════════════════ */
-  function BySectorTab() {
-    const totalInc = MOCK_SECTORS.reduce((s,d) => s + d.income, 0);
+  function BySectorTab({ liveData }) {
+    const useLive = liveData && liveData.sectorsData && liveData.sectorsData.length > 0;
+    const sectors = useLive ? liveData.sectorsData : MOCK_SECTORS;
+    const totalInc = sectors.reduce((s,d) => s + d.income, 0);
     const [sortBy, setSortBy] = useState('income');
     const [expandedSector, setExpanded] = useState(null);
-    const sorted = [...MOCK_SECTORS].sort((a,b) => b[sortBy] - a[sortBy]);
-    const growthData = MOCK_SECTORS.map(s => ({ sector: s.sector.length > 14 ? s.sector.slice(0,14)+'…' : s.sector, growth: pctChange(s.income, s.prev) })).sort((a,b) => b.growth - a.growth);
+    const sorted = [...sectors].sort((a,b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+    const growthData = sectors.map(s => ({ sector: s.sector.length > 14 ? s.sector.slice(0,14)+'…' : s.sector, growth: pctChange(s.income, s.prev) })).sort((a,b) => b.growth - a.growth);
     const heatMethods = ['major','regular','corporate','trusts','community','direct'];
     const heatLabels = ['Major Gifts','Regular','Corporate','Trusts','Community','Direct Mail'];
 
@@ -748,14 +899,14 @@ tailwind.config = {
             <h3 className="font-display text-sm font-bold text-black mb-3">Top Sectors</h3>
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
-                <Pie data={MOCK_SECTORS.slice(0,8).map(s => ({ name: s.sector, value: s.income }))} cx="50%" cy="50%" outerRadius={100} innerRadius={42} paddingAngle={2} dataKey="value" strokeWidth={0} label={PieLabel}>
-                  {MOCK_SECTORS.slice(0,8).map((_, i) => <Cell key={i} fill={PALETTE[i]} />)}
+                <Pie data={sectors.slice(0,8).map(s => ({ name: s.sector, value: s.income }))} cx="50%" cy="50%" outerRadius={100} innerRadius={42} paddingAngle={2} dataKey="value" strokeWidth={0} label={PieLabel}>
+                  {sectors.slice(0,8).map((_, i) => <Cell key={i} fill={PALETTE[i]} />)}
                 </Pie>
                 <Tooltip content={<Tip />} />
               </PieChart>
             </ResponsiveContainer>
             <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2 pt-2 border-t border-gray-100">
-              {MOCK_SECTORS.slice(0,8).map((s, i) => (
+              {sectors.slice(0,8).map((s, i) => (
                 <div key={i} className="flex items-center gap-1.5 text-[10px] text-muted truncate">
                   <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: PALETTE[i] }} />
                   {s.sector}
@@ -824,7 +975,7 @@ tailwind.config = {
   /* ═══════════════════════════════════════════
      TAB 4: MY ORG (includes benchmarking)
      ═══════════════════════════════════════════ */
-  function MyOrgTab() {
+  function MyOrgTab({ liveData, selectedYear, profile }) {
     const o = MOCK_ORG;
     const [subTab, setSubTab] = useState('performance');
     const [compareKey, setCompareKey] = useState('market');
@@ -1646,15 +1797,41 @@ tailwind.config = {
   /* ═══════════════════════════════════════════
      APP SHELL
      ═══════════════════════════════════════════ */
-  function App() {
+  function AppInner() {
     const [tab, setTab] = useState(0);
     const [sideOpen, setSideOpen] = useState(false);
+    const [selectedYear, setSelectedYear] = useState('2024');
+    const { data: rawData, loading, error, user, profile } = useData();
     const TABS = [OverviewTab, ByMethodTab, BySectorTab, MyOrgTab];
     const ActiveTab = TABS[tab];
 
+    // Transform Supabase data for the selected year
+    const liveData = useMemo(() => transformData(rawData, selectedYear), [rawData, selectedYear]);
+
+    if (loading) return (
+      <div className="flex items-center justify-center min-h-screen bg-surface">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="font-display text-lg font-bold text-brand-600">Loading Irish Giving Index...</div>
+          <div className="text-xs text-muted mt-1">Fetching data from Supabase</div>
+        </div>
+      </div>
+    );
+
+    if (error) return (
+      <div className="flex items-center justify-center min-h-screen bg-surface">
+        <div className="card p-8 max-w-md text-center">
+          <div className="text-2xl mb-2">⚠️</div>
+          <div className="font-display text-lg font-bold text-bad mb-2">Connection Error</div>
+          <p className="text-xs text-muted">{error}</p>
+          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-800 transition">Retry</button>
+        </div>
+      </div>
+    );
+
     return (
       <div className="flex min-h-screen">
-        <Sidebar tab={tab} setTab={setTab} open={sideOpen} setOpen={setSideOpen} />
+        <Sidebar tab={tab} setTab={setTab} open={sideOpen} setOpen={setSideOpen} selectedYear={selectedYear} setSelectedYear={setSelectedYear} profile={profile} />
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top bar (mobile) */}
           <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
@@ -1668,21 +1845,31 @@ tailwind.config = {
           <div className="px-6 pt-6 pb-2 flex items-center justify-between">
             <div>
               <h1 className="font-display text-2xl font-bold text-brand-600">{NAV[tab].label}</h1>
-              <p className="text-xs text-muted mt-0.5">Irish Giving Index — 2024 Annual Data</p>
+              <p className="text-xs text-muted mt-0.5">Irish Giving Index — {selectedYear} Annual Data {liveData?.curr ? `· ${liveData.curr.org_count} organisations` : ''}</p>
             </div>
+            {liveData?.curr && (
+              <div className="hidden sm:block text-right">
+                <div className="text-[10px] text-muted uppercase tracking-wider">Total Sector Income</div>
+                <div className="font-display text-lg font-bold text-brand-600">{fmt(liveData.curr.total_income)}</div>
+              </div>
+            )}
           </div>
           {/* Content */}
-          <main className="flex-1 px-6 pb-8" key={tab}>
-            <ActiveTab />
+          <main className="flex-1 px-6 pb-8" key={tab + selectedYear}>
+            <ActiveTab liveData={liveData} selectedYear={selectedYear} profile={profile} />
           </main>
           {/* Footer */}
           <footer className="px-6 py-4 border-t border-gray-200 text-xs text-muted flex justify-between">
             <span>© 2026 2into3 · Irish Giving Index</span>
-            <span>Data updated March 2026</span>
+            <span>Live data from Supabase · {selectedYear}</span>
           </footer>
         </div>
       </div>
     );
+  }
+
+  function App() {
+    return React.createElement(DataProvider, null, React.createElement(AppInner, null));
   }
 
   ReactDOM.createRoot(document.getElementById('igi-root')).render(<App />);
