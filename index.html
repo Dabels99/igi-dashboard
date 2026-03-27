@@ -163,7 +163,7 @@ tailwind.config = {
             bands: bandRes.data,
           });
 
-          // Check auth
+          // Check auth — try local session first
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             setUser(session.user);
@@ -179,7 +179,47 @@ tailwind.config = {
       }
       fetchAll();
 
-      // Listen for auth changes
+      // Listen for auth token from parent WordPress window (cross-domain iframe)
+      function handleMessage(event) {
+        // Accept from 2into3.com only
+        if (event.origin !== 'https://2into3.com') return;
+        if (event.data?.type === 'supabase-auth' && event.data.access_token && event.data.refresh_token) {
+          supabase.auth.setSession({
+            access_token: event.data.access_token,
+            refresh_token: event.data.refresh_token,
+          }).then(({ data }) => {
+            if (data?.user) {
+              setUser(data.user);
+              supabase.from('profiles').select('*').eq('id', data.user.id).single().then(({ data: prof }) => {
+                if (prof) setProfile(prof);
+              });
+            }
+          });
+        }
+      }
+      window.addEventListener('message', handleMessage);
+
+      // Also check URL hash for token (fallback method)
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const at = params.get('access_token');
+        const rt = params.get('refresh_token');
+        if (at && rt) {
+          supabase.auth.setSession({ access_token: at, refresh_token: rt }).then(({ data }) => {
+            if (data?.user) {
+              setUser(data.user);
+              supabase.from('profiles').select('*').eq('id', data.user.id).single().then(({ data: prof }) => {
+                if (prof) setProfile(prof);
+              });
+            }
+          });
+          // Clean the hash
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }
+
+      // Listen for auth state changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
           setUser(session.user);
@@ -190,7 +230,16 @@ tailwind.config = {
           setProfile(null);
         }
       });
-      return () => subscription.unsubscribe();
+
+      // Request auth from parent window (if in iframe)
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'supabase-auth-request' }, 'https://2into3.com');
+      }
+
+      return () => {
+        subscription.unsubscribe();
+        window.removeEventListener('message', handleMessage);
+      };
     }, []);
 
     return React.createElement(DataContext.Provider, { value: { data, loading, error, user, profile } }, children);
