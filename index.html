@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IGI Dashboard — Flowbite Style</title>
-<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>IGI Dashboard v7 — Irish Giving Index</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -16,159 +17,159 @@ tailwind.config = {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['Lato', 'Helvetica', 'Arial', 'sans-serif'],
-        sans: ['Plus Jakarta Sans', 'Lato', 'system-ui', 'sans-serif'],
+        display: ['Sora', 'system-ui', 'sans-serif'],
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
-        brand: {
-          50: '#f0f4fb', 100: '#dce4f5', 200: '#b8c9eb',
-          300: '#8ba7dd', 400: '#5b80cb', 500: '#3662b8',
-          600: '#002C74', 700: '#002262', 800: '#001a4d', 900: '#001138',
-        },
-        gold: {
-          50: '#fffbeb', 100: '#fdf0d5', 200: '#fce0a8',
-          300: '#f9cc6e', 400: '#F0A500', 500: '#d99500',
-          600: '#b37a00', 700: '#8c5f00',
-        },
-        surface: { DEFAULT: '#F9FAFB', card: '#FFFFFF', border: '#E5E7EB', hover: '#F3F4F6' },
+        brand: { 50: '#f0f4fb', 100: '#dce4f5', 200: '#b8c9eb', 400: '#5b80cb', 600: '#002d74', 800: '#001a4d' },
+        gold: { 50: '#fff8eb', 100: '#fef0d5', 200: '#fce0a8', 400: '#ffb548', 500: '#e6a340', 600: '#b37a00' },
+        surface: '#fafafa',
+        muted: '#6b7280',
+        ok: '#059669',
+        bad: '#dc2626',
+        teal: '#0e7c86',
+        purp: '#6366f1',
       }
     }
   }
 }
 </script>
 <style>
-  body { background: #F9FAFB; }
+  body { background: #fafafa; margin: 0; }
+  .font-display { font-family: 'Sora', system-ui, sans-serif; }
+  .font-body { font-family: 'DM Sans', system-ui, sans-serif; }
+  .tabular { font-variant-numeric: tabular-nums; }
 
-  /* Smooth card transitions */
+  /* Noise texture on surface */
+  .noise-bg {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.018'/%3E%3C/svg%3E");
+  }
+
+  /* Card base */
   .card {
     background: #fff;
-    border: 1px solid #E5E7EB;
+    border: 1px solid #e5e7eb;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.02);
     transition: box-shadow 0.2s ease, transform 0.15s ease;
   }
   .card:hover {
-    box-shadow: 0 4px 12px rgba(0,44,116,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  }
-
-  /* KPI card accent top border */
-  .kpi-card { position: relative; overflow: hidden; }
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: 12px 12px 0 0;
-  }
-  .kpi-accent-navy::before { background: #002C74; }
-  .kpi-accent-gold::before { background: #F0A500; }
-  .kpi-accent-teal::before { background: #0e7c86; }
-  .kpi-accent-green::before { background: #059669; }
-
-  /* Tab styling */
-  .tab-btn {
-    padding: 10px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #6B7280;
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-  }
-  .tab-btn:hover { color: #002C74; background: #f0f4fb; }
-  .tab-btn.active {
-    color: #002C74;
-    border-bottom-color: #002C74;
-    background: #f0f4fb;
+    box-shadow: 0 4px 16px rgba(0,45,116,0.07), 0 2px 4px rgba(0,0,0,0.03);
   }
 
   /* Animations */
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .animate-in { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .delay-1 { animation-delay: 0.05s; }
-  .delay-2 { animation-delay: 0.1s; }
-  .delay-3 { animation-delay: 0.15s; }
-  .delay-4 { animation-delay: 0.2s; }
-
   @keyframes fillBar { from { width: 0; } }
-  .bar-fill { animation: fillBar 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes countUp { from { opacity: 0.3; } to { opacity: 1; } }
+  .anim-in { animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .anim-d1 { animation-delay: 0.04s; }
+  .anim-d2 { animation-delay: 0.09s; }
+  .anim-d3 { animation-delay: 0.14s; }
+  .anim-d4 { animation-delay: 0.19s; }
+  .anim-d5 { animation-delay: 0.24s; }
+  .bar-fill { animation: fillBar 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-  /* Tabular nums for data alignment */
-  .tabular { font-variant-numeric: tabular-nums; }
-
-  /* Recharts overrides for clean light theme */
-  .recharts-text { font-family: 'Plus Jakarta Sans', 'Lato', sans-serif !important; }
+  /* Recharts overrides */
+  .recharts-text { font-family: 'DM Sans', sans-serif !important; }
   .recharts-cartesian-axis-tick-value { font-size: 11px !important; fill: #9CA3AF !important; }
-  .recharts-cartesian-grid-horizontal line,
-  .recharts-cartesian-grid-vertical line { stroke: #F3F4F6 !important; }
+  .recharts-cartesian-grid line { stroke: #f3f4f6 !important; }
   .recharts-tooltip-wrapper .recharts-default-tooltip {
-    background: #fff !important;
-    border: 1px solid #E5E7EB !important;
-    border-radius: 10px !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 12px !important;
+    background: #fff !important; border: 1px solid #e5e7eb !important;
+    border-radius: 10px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+    font-family: 'DM Sans', sans-serif !important; font-size: 12px !important;
   }
-  .recharts-legend-item-text { font-size: 12px !important; color: #6B7280 !important; }
 
   /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #F9FAFB; }
-  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
 
-  /* Badge styles */
-  .badge-up { background: #ECFDF5; color: #059669; }
-  .badge-down { background: #FEF2F2; color: #DC2626; }
+  /* Sidebar */
+  .sidebar { transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .sidebar-nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+    border-radius: 8px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.6);
+    cursor: pointer; transition: all 0.15s ease; border-left: 3px solid transparent;
+    text-decoration: none;
+  }
+  .sidebar-nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  .sidebar-nav-item.active {
+    color: #fff; background: rgba(255,255,255,0.1);
+    border-left-color: #ffb548;
+  }
+
+  /* Heatmap cell */
+  .heat-cell {
+    width: 100%; aspect-ratio: 1; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; transition: transform 0.15s;
+  }
+  .heat-cell:hover { transform: scale(1.15); z-index: 2; }
 </style>
 </head>
-<body class="min-h-screen text-gray-800">
+<body class="min-h-screen font-body text-black noise-bg">
 
 <div id="igi-root"></div>
 
 <script type="text/babel">
 (() => {
-  const { useState, useMemo } = React;
+  const { useState, useMemo, useEffect, useRef } = React;
   const {
     ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
-    AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    AreaChart, Area, LineChart, Line,
+    RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    ScatterChart, Scatter, ZAxis,
+    ReferenceLine,
   } = Recharts;
 
-  /* ── MOCK DATA ────────────────────────── */
+  /* ═══════════════════════════════════════════
+     MOCK DATA
+     ═══════════════════════════════════════════ */
   const MOCK_MARKET = [
+    { year: '2020', total_income: 720000000, org_count: 88, avg_income: 8181818, total_gifts: 3600000 },
+    { year: '2021', total_income: 785000000, org_count: 91, avg_income: 8626373, total_gifts: 3850000 },
+    { year: '2022', total_income: 845000000, org_count: 95, avg_income: 8894736, total_gifts: 4050000 },
     { year: '2023', total_income: 892000000, org_count: 98, avg_income: 9102040, total_gifts: 4200000 },
     { year: '2024', total_income: 967000000, org_count: 100, avg_income: 9670000, total_gifts: 4580000 },
   ];
   const MOCK_METHODS = [
-    { method: 'Major Gifts', income: 248000000, pct: 25.6, gifts: 12400 },
-    { method: 'Regular Giving', income: 195000000, pct: 20.2, gifts: 2100000 },
-    { method: 'Corporate', income: 142000000, pct: 14.7, gifts: 8900 },
-    { method: 'Trusts & Foundations', income: 118000000, pct: 12.2, gifts: 3200 },
-    { method: 'Community', income: 87000000, pct: 9.0, gifts: 890000 },
-    { method: 'Direct Mail', income: 62000000, pct: 6.4, gifts: 1200000 },
-    { method: 'Legacies', income: 48000000, pct: 5.0, gifts: 1800 },
-    { method: 'Tax Relief', income: 34000000, pct: 3.5, gifts: 45000 },
-    { method: 'Other', income: 33000000, pct: 3.4, gifts: 15000 },
+    { method: 'Major Gifts', income: 248000000, prev: 220000000, pct: 25.6, gifts: 12400, cost: 18600000, avg_gift: 20000 },
+    { method: 'Regular Giving', income: 195000000, prev: 180000000, pct: 20.2, gifts: 2100000, cost: 29250000, avg_gift: 93 },
+    { method: 'Corporate', income: 142000000, prev: 135000000, pct: 14.7, gifts: 8900, cost: 21300000, avg_gift: 15955 },
+    { method: 'Trusts & Foundations', income: 118000000, prev: 108000000, pct: 12.2, gifts: 3200, cost: 11800000, avg_gift: 36875 },
+    { method: 'Community', income: 87000000, prev: 82000000, pct: 9.0, gifts: 890000, cost: 17400000, avg_gift: 98 },
+    { method: 'Direct Mail', income: 62000000, prev: 65000000, pct: 6.4, gifts: 1200000, cost: 18600000, avg_gift: 52 },
+    { method: 'Emergency Appeals', income: 38000000, prev: 32000000, pct: 3.9, gifts: 450000, cost: 5700000, avg_gift: 84 },
+    { method: 'Legacies', income: 48000000, prev: 40000000, pct: 5.0, gifts: 1800, cost: 2400000, avg_gift: 26667 },
+    { method: 'Tax Relief', income: 34000000, prev: 33000000, pct: 3.5, gifts: 45000, cost: 1700000, avg_gift: 756 },
+    { method: 'Endowments', income: 22000000, prev: 20000000, pct: 2.3, gifts: 800, cost: 1100000, avg_gift: 27500 },
+    { method: 'Sales', income: 18000000, prev: 17000000, pct: 1.9, gifts: 320000, cost: 5400000, avg_gift: 56 },
+    { method: 'Other', income: 15000000, prev: 14000000, pct: 1.6, gifts: 15000, cost: 2250000, avg_gift: 1000 },
   ];
   const MOCK_SECTORS = [
-    { sector: 'Health', income: 198000000, orgs: 18 },
-    { sector: 'Children & Youth', income: 156000000, orgs: 14 },
-    { sector: 'International Dev', income: 132000000, orgs: 12 },
-    { sector: 'Disability', income: 108000000, orgs: 11 },
-    { sector: 'Community', income: 96000000, orgs: 10 },
-    { sector: 'Housing', income: 72000000, orgs: 8 },
-    { sector: 'Education', income: 58000000, orgs: 7 },
-    { sector: 'Environment', income: 48000000, orgs: 6 },
-    { sector: 'Arts & Culture', income: 38000000, orgs: 5 },
-    { sector: 'Advocacy', income: 28000000, orgs: 4 },
-    { sector: 'Animal Welfare', income: 18000000, orgs: 3 },
-    { sector: 'Other', income: 15000000, orgs: 2 },
+    { sector: 'Health', income: 198000000, prev: 182000000, orgs: 18, fte: 12.5 },
+    { sector: 'Children & Youth', income: 156000000, prev: 148000000, orgs: 14, fte: 8.2 },
+    { sector: 'International Dev', income: 132000000, prev: 125000000, orgs: 12, fte: 15.3 },
+    { sector: 'Disability', income: 108000000, prev: 102000000, orgs: 11, fte: 6.8 },
+    { sector: 'Community Dev', income: 96000000, prev: 90000000, orgs: 10, fte: 4.5 },
+    { sector: 'Housing & Homelessness', income: 72000000, prev: 65000000, orgs: 8, fte: 5.2 },
+    { sector: 'Education', income: 58000000, prev: 55000000, orgs: 7, fte: 3.8 },
+    { sector: 'Environment', income: 48000000, prev: 42000000, orgs: 6, fte: 4.1 },
+    { sector: 'Arts & Culture', income: 38000000, prev: 36000000, orgs: 5, fte: 3.2 },
+    { sector: 'Advocacy & Rights', income: 28000000, prev: 26000000, orgs: 4, fte: 5.5 },
+    { sector: 'Animal Welfare', income: 18000000, prev: 15000000, orgs: 3, fte: 2.8 },
+    { sector: 'Other', income: 15000000, prev: 14000000, orgs: 2, fte: 2.1 },
+  ];
+  const MOCK_GEO = [
+    { year: '2020', roi: 540000000, uk: 126000000, row: 54000000 },
+    { year: '2021', roi: 589000000, uk: 137000000, row: 59000000 },
+    { year: '2022', roi: 634000000, uk: 148000000, row: 63000000 },
+    { year: '2023', roi: 669000000, uk: 156000000, row: 67000000 },
+    { year: '2024', roi: 725000000, uk: 169000000, row: 73000000 },
   ];
   const MOCK_RADAR = [
     { metric: 'Income Growth', org: 82, market: 65 },
@@ -178,471 +179,1502 @@ tailwind.config = {
     { metric: 'Gift Volume', org: 78, market: 60 },
     { metric: 'Avg Gift Size', org: 45, market: 55 },
   ];
-  const MOCK_TREND = [
-    { year: '2020', income: 720000000 },
-    { year: '2021', income: 785000000 },
-    { year: '2022', income: 845000000 },
-    { year: '2023', income: 892000000 },
-    { year: '2024', income: 967000000 },
+  const MOCK_BANDS = [
+    { band: 'Small', label: 'Under €25K', inc: 18200, cost: 5460, fte: 0.8, orgs: 32, cpe: 0.30, ag: 35, ipf: 22750 },
+    { band: 'Medium', label: '€25K–€100K', inc: 62800, cost: 15700, fte: 2.5, orgs: 42, cpe: 0.25, ag: 68, ipf: 25120 },
+    { band: 'Large', label: 'Over €100K', inc: 385000, cost: 88550, fte: 8.2, orgs: 26, cpe: 0.23, ag: 142, ipf: 46951 },
   ];
+  const MOCK_ORG = {
+    name: 'Sample Charity Ireland', income: 420000, prev_income: 374000,
+    gifts: 8500, prev_gifts: 7860, avg_gift: 49.41, prev_avg_gift: 47.58,
+    retention: 71, mkt_retention: 58, cpe: 0.22, mkt_cpe: 0.25,
+    donors: 8500, retained: 5100, new_donors: 2800, lapsed: 600, band: 'Large',
+    methods: [
+      { method: 'Regular Giving', pct: 35 }, { method: 'Major Gifts', pct: 25 },
+      { method: 'Corporate', pct: 15 }, { method: 'Community', pct: 10 },
+      { method: 'Direct Mail', pct: 8 }, { method: 'Other', pct: 7 },
+    ],
+    history: [
+      { year: '2020', income: 310000, gifts: 6200, retention: 65 },
+      { year: '2021', income: 335000, gifts: 6800, retention: 67 },
+      { year: '2022', income: 358000, gifts: 7200, retention: 69 },
+      { year: '2023', income: 374000, gifts: 7860, retention: 72 },
+      { year: '2024', income: 420000, gifts: 8500, retention: 71 },
+    ],
+  };
+  const MKT_MIX = [
+    { method: 'Major Gifts', pct: 25.6 }, { method: 'Regular Giving', pct: 20.2 },
+    { method: 'Corporate', pct: 14.7 }, { method: 'Trusts & Foundations', pct: 12.2 },
+    { method: 'Community', pct: 9.0 }, { method: 'Other', pct: 18.3 },
+  ];
+  const HEAT = [
+    { sector: 'Health', major: 85, regular: 70, corporate: 60, trusts: 45, community: 30, direct: 25 },
+    { sector: 'Children & Youth', major: 40, regular: 80, corporate: 55, trusts: 50, community: 65, direct: 45 },
+    { sector: 'International Dev', major: 50, regular: 75, corporate: 35, trusts: 70, community: 40, direct: 60 },
+    { sector: 'Disability', major: 30, regular: 65, corporate: 40, trusts: 55, community: 50, direct: 35 },
+    { sector: 'Community Dev', major: 20, regular: 45, corporate: 30, trusts: 25, community: 85, direct: 20 },
+    { sector: 'Housing', major: 55, regular: 50, corporate: 45, trusts: 60, community: 35, direct: 15 },
+  ];
+  const PALETTE = ['#002d74','#ffb548','#0e7c86','#059669','#6366f1','#d94f4f','#f97316','#8b5cf6','#06b6d4','#ec4899','#14b8a6','#f59e0b'];
 
-  const BRAND_COLORS = ['#002C74', '#F0A500', '#0e7c86', '#059669', '#6366f1', '#d94f4f', '#f97316', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#f59e0b'];
+  /* ═══════════════════════════════════════════
+     HELPERS
+     ═══════════════════════════════════════════ */
+  const fmt = (v) => { if (!v && v !== 0) return '—'; const n = Number(v); if (n >= 1e9) return '€' + (n/1e9).toFixed(2) + 'B'; if (n >= 1e6) return '€' + (n/1e6).toFixed(1) + 'M'; if (n >= 1e3) return '€' + (n/1e3).toFixed(0) + 'K'; return '€' + n.toLocaleString('en-IE'); };
+  const fmtN = (v) => { if (!v && v !== 0) return '—'; const n = Number(v); if (n >= 1e6) return (n/1e6).toFixed(1) + 'M'; if (n >= 1e3) return (n/1e3).toFixed(0) + 'K'; return n.toLocaleString('en-IE'); };
+  const pctChange = (curr, prev) => prev ? ((curr - prev) / prev * 100) : 0;
+  const ChangeBadge = ({ val }) => {
+    const up = val >= 0;
+    return (
+      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${up ? 'bg-emerald-50 text-ok' : 'bg-red-50 text-bad'}`}>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+          {up ? <path d="M5 2L8 6H2L5 2Z"/> : <path d="M5 8L2 4H8L5 8Z"/>}
+        </svg>
+        {Math.abs(val).toFixed(1)}%
+      </span>
+    );
+  };
 
-  /* ── HELPERS ──────────────────────────── */
-  function fmt(val) {
-    if (!val) return '—';
-    const n = Number(val);
-    if (n >= 1e9) return '€' + (n / 1e9).toFixed(2) + 'B';
-    if (n >= 1e6) return '€' + (n / 1e6).toFixed(1) + 'M';
-    if (n >= 1e3) return '€' + (n / 1e3).toFixed(0) + 'K';
-    return '€' + n.toLocaleString('en-IE');
-  }
-  function fmtN(val) {
-    if (!val) return '—';
-    const n = Number(val);
-    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-    if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
-    return n.toLocaleString('en-IE');
-  }
+  /* Lucide icon helper — renders inline SVG from lucide */
+  const Icon = ({ name, size = 16, className = '', stroke = 'currentColor' }) => {
+    const ref = useRef(null);
+    useEffect(() => {
+      if (ref.current && window.lucide) {
+        ref.current.innerHTML = '';
+        const el = document.createElement('i');
+        el.setAttribute('data-lucide', name);
+        ref.current.appendChild(el);
+        window.lucide.createIcons({ nodes: [el] });
+      }
+    }, [name]);
+    return <span ref={ref} className={`inline-flex items-center justify-center ${className}`} style={{ width: size, height: size, color: stroke }} />;
+  };
+
+  /* ── Chart label renderers ── */
+  const BarLabel = ({ x, y, width, height, value, vfmt }) => {
+    const f = vfmt || fmt;
+    return <text x={x + width + 6} y={y + height / 2} dy={4} fontSize={10} fontWeight={600} fill="#374151" fontFamily="DM Sans, sans-serif">{f(value)}</text>;
+  };
+  const BarLabelTop = ({ x, y, width, value, vfmt }) => {
+    const f = vfmt || fmt;
+    return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fontWeight={600} fill="#374151" fontFamily="DM Sans, sans-serif">{f(value)}</text>;
+  };
+  const PieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    if (percent < 0.05) return null;
+    return <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={10} fontWeight={700} fill="#fff" fontFamily="DM Sans, sans-serif">{(percent * 100).toFixed(0)}%</text>;
+  };
+  const PieOuterLabel = ({ cx, cy, midAngle, outerRadius, percent, name }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 18;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    if (percent < 0.06) return null;
+    return <text x={x} y={y} textAnchor={x > cx ? 'start' : 'end'} fontSize={9} fill="#6b7280" fontFamily="DM Sans, sans-serif">{name}</text>;
+  };
 
   /* Custom tooltip */
-  function BrandTooltip({ active, payload, label, formatter }) {
+  const Tip = ({ active, payload, label, vfmt }) => {
     if (!active || !payload?.length) return null;
+    const f = vfmt || fmt;
     return (
-      <div style={{
-        background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10,
-        padding: '12px 16px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-        fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12
-      }}>
-        {label && <div style={{ fontWeight: 700, color: '#111827', marginBottom: 6 }}>{label}</div>}
-        {payload.map((p, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, color: '#4B5563' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color || p.fill, flexShrink: 0 }} />
-            <span>{p.name}: <strong style={{ color: '#111827' }}>{formatter ? formatter(p.value) : p.value}</strong></span>
+      <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 16px rgba(0,0,0,0.1)', fontSize:12, fontFamily:'DM Sans, sans-serif' }}>
+        {label && <div style={{ fontWeight:700, color:'#111', marginBottom:5 }}>{label}</div>}
+        {payload.map((p,i) => (
+          <div key={i} style={{ display:'flex', alignItems:'center', gap:7, marginBottom:2, color:'#4B5563' }}>
+            <span style={{ width:8, height:8, borderRadius:'50%', background:p.color||p.fill, flexShrink:0 }}/>
+            <span>{p.name}: <strong style={{ color:'#111' }}>{f(p.value)}</strong></span>
           </div>
         ))}
       </div>
     );
+  };
+
+  /* Sparkline — tiny inline chart */
+  const Spark = ({ data, dataKey, color = '#002d74', w = 80, h = 28 }) => (
+    <ResponsiveContainer width={w} height={h}>
+      <LineChart data={data}>
+        <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+
+  /* ═══════════════════════════════════════════
+     SIDEBAR
+     ═══════════════════════════════════════════ */
+  const NAV = [
+    { icon: 'bar-chart-3', label: 'Overview' },
+    { icon: 'target', label: 'By Method' },
+    { icon: 'building-2', label: 'By Sector' },
+    { icon: 'zap', label: 'My Organisation' },
+  ];
+
+  function Sidebar({ tab, setTab, open, setOpen }) {
+    return (
+      <>
+        {open && <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)} />}
+        <aside className={`fixed lg:static top-0 left-0 h-screen z-50 sidebar flex flex-col bg-brand-600 ${open ? 'w-64' : 'w-0 lg:w-64'} overflow-hidden`}>
+          <div className="px-5 pt-7 pb-5 border-b border-white/10">
+            <div className="font-display text-white text-xl font-bold leading-tight tracking-tight">Irish Giving Index</div>
+            <div className="text-[9px] font-bold uppercase tracking-[3px] text-gold-400 mt-1">Annual Dashboard</div>
+          </div>
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {NAV.map((n, i) => (
+              <div key={i} className={`sidebar-nav-item ${tab === i ? 'active' : ''}`} onClick={() => { setTab(i); setOpen(false); }}>
+                <Icon name={n.icon} size={18} stroke="currentColor" />
+                <span>{n.label}</span>
+              </div>
+            ))}
+          </nav>
+          <div className="px-4 py-2 mb-2">
+            <select className="w-full bg-white/10 border border-white/15 text-white text-xs font-semibold rounded-lg px-3 py-2 cursor-pointer appearance-none"
+              style={{ backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='%23fff'/%3E%3C/svg%3E\")", backgroundRepeat:'no-repeat', backgroundPosition:'right 10px center' }}>
+              <option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>2020</option>
+            </select>
+          </div>
+          <div className="px-5 py-4 border-t border-white/10">
+            <div className="text-xs text-white/50">Signed in as</div>
+            <div className="text-sm font-bold text-white">Danny Abels</div>
+            <div className="text-xs text-white/40">2into3</div>
+            <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-400">Contributor</span>
+          </div>
+        </aside>
+      </>
+    );
   }
 
-  /* ── KPI CARD ─────────────────────────── */
-  function KpiCard({ label, value, change, icon, delay, accent }) {
+  /* ═══════════════════════════════════════════
+     TAB 1: OVERVIEW — placeholder
+     ═══════════════════════════════════════════ */
+  function OverviewTab() {
+    const curr = MOCK_MARKET[4], prev = MOCK_MARKET[3];
+    const yoyInc = pctChange(curr.total_income, prev.total_income);
+    const yoyOrg = pctChange(curr.org_count, prev.org_count);
+    const yoyAvg = pctChange(curr.avg_income, prev.avg_income);
+    const yoyGift = pctChange(curr.total_gifts, prev.total_gifts);
+    const totalMethodIncome = MOCK_METHODS.reduce((s,m) => s + m.income, 0);
+    const topMovers = [...MOCK_METHODS].map(m => ({ ...m, change: pctChange(m.income, m.prev) })).sort((a,b) => b.change - a.change);
+    const pieMethods = MOCK_METHODS.slice(0,8).map(m => ({ name: m.method, value: m.income }));
+
     return (
-      <div className={`card kpi-card kpi-accent-${accent} p-5 animate-in ${delay}`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</span>
-          <span className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-sm">{icon}</span>
+      <div className="anim-in space-y-5">
+        {/* Row 1: KPI Cards */}
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Fundraised Income', val: fmt(curr.total_income), chg: yoyInc, spark: MOCK_MARKET.map(d => ({ v: d.total_income })), color: '#002d74', accent: 'border-t-brand-600' },
+            { label: 'Participating Organisations', val: fmtN(curr.org_count), chg: yoyOrg, spark: MOCK_MARKET.map(d => ({ v: d.org_count })), color: '#ffb548', accent: 'border-t-gold-400' },
+            { label: 'Average Income per Org', val: fmt(curr.avg_income), chg: yoyAvg, spark: MOCK_MARKET.map(d => ({ v: d.avg_income })), color: '#0e7c86', accent: 'border-t-teal' },
+            { label: 'Total Individual Gifts', val: fmtN(curr.total_gifts), chg: yoyGift, spark: MOCK_MARKET.map(d => ({ v: d.total_gifts })), color: '#059669', accent: 'border-t-ok' },
+          ].map((k, i) => (
+            <div key={i} className={`card p-5 border-t-[3px] ${k.accent} anim-in anim-d${i+1}`}>
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">{k.label}</span>
+                <Spark data={k.spark} dataKey="v" color={k.color} />
+              </div>
+              <div className="font-display text-3xl font-extrabold tabular text-black mb-1">{k.val}</div>
+              <ChangeBadge val={k.chg} />
+            </div>
+          ))}
         </div>
-        <div className="font-heading text-2xl font-black tabular text-gray-900 mb-1">{value}</div>
-        {change != null && (
-          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${change >= 0 ? 'badge-up' : 'badge-down'}`}>
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-              {change >= 0
-                ? <path d="M5 2L8 6H2L5 2Z" />
-                : <path d="M5 8L2 4H8L5 8Z" />
-              }
-            </svg>
-            {Math.abs(change).toFixed(1)}%
-          </span>
-        )}
+
+        {/* Row 2: Income Trend + Market Pulse */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div className="card p-5 xl:col-span-2 anim-in anim-d2">
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="font-display text-sm font-bold text-black">Income Trend</h3>
+              <span className="text-[10px] text-muted">5-year total fundraised income</span>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={MOCK_MARKET}>
+                <defs>
+                  <linearGradient id="aGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#002d74" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#002d74" stopOpacity={0.01} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" tick={{ fontSize:12, fill:'#9CA3AF' }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={65} />
+                <Tooltip content={<Tip />} />
+                <Area type="monotone" dataKey="total_income" name="Total Income" stroke="#002d74" strokeWidth={2.5} fill="url(#aGrad)"
+                  dot={{ r:4, fill:'#002d74', stroke:'#fff', strokeWidth:2 }}
+                  activeDot={{ r:6, fill:'#002d74', stroke:'#fff', strokeWidth:2 }}
+                  label={({ x, y, value }) => <text x={x} y={y - 12} textAnchor="middle" fontSize={9} fontWeight={600} fill="#002d74" fontFamily="DM Sans">{fmt(value)}</text>} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="card p-5 anim-in anim-d3">
+            <h3 className="font-display text-sm font-bold text-black mb-4">Market Pulse</h3>
+            <div className="space-y-3">
+              {[
+                { icon: 'trending-up', text: `The sector raised ${fmt(curr.total_income)} in 2024, up ${yoyInc.toFixed(1)}% on 2023.`, bg: 'bg-brand-50' },
+                { icon: 'target', text: `Major Gifts drove 25.6% of all income, the single largest method.`, bg: 'bg-gold-50' },
+                { icon: 'landmark', text: `${curr.org_count} organisations participated, up from ${prev.org_count}.`, bg: 'bg-emerald-50' },
+                { icon: 'gift', text: `${fmtN(curr.total_gifts)} individual gifts recorded, up ${yoyGift.toFixed(1)}% YoY.`, bg: 'bg-blue-50' },
+              ].map((p, i) => (
+                <div key={i} className={`${p.bg} rounded-xl p-3.5 flex items-start gap-3`}>
+                  <Icon name={p.icon} size={20} className="flex-shrink-0 mt-0.5" stroke="#002d74" />
+                  <p className="text-xs leading-relaxed text-gray-700">{p.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Method Mix + Geography + Top Movers */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Method Mix Donut */}
+          <div className="card p-5 anim-in anim-d2">
+            <h3 className="font-display text-sm font-bold text-black mb-3">Method Mix</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={pieMethods} cx="50%" cy="50%" innerRadius={48} outerRadius={80} paddingAngle={2} dataKey="value" strokeWidth={0} label={PieLabel}>
+                  {pieMethods.map((_, i) => <Cell key={i} fill={PALETTE[i]} />)}
+                </Pie>
+                <Tooltip content={<Tip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2 pt-2 border-t border-gray-100">
+              {pieMethods.map((m, i) => (
+                <div key={i} className="flex items-center gap-2 text-[10px] text-muted">
+                  <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: PALETTE[i] }} />
+                  {m.name}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Geography Stacked Bar */}
+          <div className="card p-5 anim-in anim-d3">
+            <h3 className="font-display text-sm font-bold text-black mb-3">Income by Geography</h3>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={MOCK_GEO}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={55} />
+                <Tooltip content={<Tip />} />
+                <Legend wrapperStyle={{ fontSize:11 }} />
+                <Bar dataKey="roi" name="Republic of Ireland" stackId="a" fill="#002d74" radius={[0,0,0,0]} />
+                <Bar dataKey="uk" name="United Kingdom" stackId="a" fill="#5b80cb" />
+                <Bar dataKey="row" name="Rest of World" stackId="a" fill="#b8c9eb" radius={[4,4,0,0]}
+                  label={({ x, y, width, value, index }) => {
+                    const d = MOCK_GEO[index];
+                    if (!d) return null;
+                    const total = d.roi + d.uk + d.row;
+                    return <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={9} fontWeight={600} fill="#374151" fontFamily="DM Sans">{fmt(total)}</text>;
+                  }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Top Movers */}
+          <div className="card p-5 anim-in anim-d4">
+            <h3 className="font-display text-sm font-bold text-black mb-3">Top Movers</h3>
+            <div className="space-y-0">
+              {topMovers.map((m, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                  <span className="text-xs font-medium text-gray-700 truncate mr-2">{m.method}</span>
+                  <ChangeBadge val={m.change} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 4: YoY Comparison */}
+        <div className="card p-5 anim-in anim-d3">
+          <h3 className="font-display text-sm font-bold text-black mb-4">Year-on-Year Comparison</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={[
+              { metric: 'Total Income', '2023': prev.total_income, '2024': curr.total_income },
+              { metric: 'Avg Income', '2023': prev.avg_income, '2024': curr.avg_income },
+            ]} barGap={8}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="metric" tick={{ fontSize:12, fill:'#6b7280' }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={70} />
+              <Tooltip content={<Tip />} />
+              <Legend wrapperStyle={{ fontSize:12 }} />
+              <Bar dataKey="2023" fill="#b8c9eb" radius={[6,6,0,0]} maxBarSize={52} label={<BarLabelTop />} />
+              <Bar dataKey="2024" fill="#002d74" radius={[6,6,0,0]} maxBarSize={52} label={<BarLabelTop />} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     );
   }
 
-  /* ── CARD WRAPPER ─────────────────────── */
-  function Card({ title, icon, subtitle, children, className = '' }) {
+  /* ═══════════════════════════════════════════
+     TAB 2: BY METHOD — placeholder
+     ═══════════════════════════════════════════ */
+  function ByMethodTab() {
+    const totalInc = MOCK_METHODS.reduce((s,m) => s + m.income, 0);
+    const sorted = [...MOCK_METHODS].sort((a,b) => b.income - a.income);
+    const costSorted = [...MOCK_METHODS].map(m => ({ ...m, cpe: m.cost / m.income })).sort((a,b) => a.cpe - b.cpe);
+    const avgCpe = MOCK_METHODS.reduce((s,m) => s + m.cost, 0) / totalInc;
+    // Bubble data: gifts vs income, size = avg_gift
+    const bubbleData = MOCK_METHODS.map(m => ({ x: Math.min(m.gifts, 500000), y: m.income, z: Math.min(m.avg_gift, 5000), name: m.method }));
+
     return (
-      <div className={`card p-6 ${className}`}>
-        {title && (
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
-              {icon && <span className="text-base">{icon}</span>}
-              <div>
-                <h3 className="font-heading text-sm font-bold text-gray-900">{title}</h3>
-                {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+      <div className="anim-in space-y-5">
+        {/* Row 1: Horizontal Bar Chart */}
+        <div className="card p-5 anim-in anim-d1">
+          <h3 className="font-display text-sm font-bold text-black mb-4">Income by Fundraising Method</h3>
+          <ResponsiveContainer width="100%" height={440}>
+            <BarChart data={sorted} layout="vertical" margin={{ left: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" tickFormatter={v => fmt(v)} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="method" width={140} tick={{ fontSize:11, fill:'#4B5563' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<Tip />} />
+              <Bar dataKey="income" name="Income" radius={[0,6,6,0]} maxBarSize={22} label={<BarLabel />}>
+                {sorted.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Row 2: Progress Bars + Bubble Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="card p-5 anim-in anim-d2">
+            <h3 className="font-display text-sm font-bold text-black mb-4">Method Breakdown</h3>
+            <div className="space-y-3">
+              {sorted.map((m, i) => {
+                const pct = (m.income / totalInc) * 100;
+                return (
+                  <div key={i}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-medium text-gray-600">{m.method}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold tabular text-black">{fmt(m.income)}</span>
+                        <span className="text-[10px] tabular text-muted w-10 text-right">{pct.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden bg-gray-100">
+                      <div className="h-full rounded-full bar-fill" style={{ width: pct + '%', background: PALETTE[i % PALETTE.length], animationDelay: (i * 0.05) + 's' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="card p-5 anim-in anim-d3">
+            <div className="mb-4">
+              <h3 className="font-display text-sm font-bold text-black">Gifts vs Income</h3>
+              <p className="text-[10px] text-muted mt-0.5">Bubble size = average gift value. Shows high-volume vs high-value methods.</p>
+            </div>
+            <ResponsiveContainer width="100%" height={360}>
+              <ScatterChart margin={{ bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" dataKey="x" name="Gifts" tickFormatter={v => fmtN(v)} tick={{ fontSize:10, fill:'#9CA3AF' }} axisLine={false} tickLine={false} label={{ value:'Gift Count', position:'bottom', fontSize:10, fill:'#9CA3AF' }} />
+                <YAxis type="number" dataKey="y" name="Income" tickFormatter={v => fmt(v)} tick={{ fontSize:10, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={60} />
+                <ZAxis type="number" dataKey="z" range={[40, 400]} />
+                <Tooltip content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0].payload;
+                  return <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 16px rgba(0,0,0,0.1)', fontSize:12 }}>
+                    <div style={{ fontWeight:700, marginBottom:4 }}>{d.name}</div>
+                    <div>Income: <strong>{fmt(d.y)}</strong></div>
+                    <div>Gifts: <strong>{fmtN(d.x)}</strong></div>
+                    <div>Avg Gift: <strong>{fmt(d.z)}</strong></div>
+                  </div>;
+                }} />
+                <Scatter data={bubbleData} fill="#002d74" fillOpacity={0.7}>
+                  {bubbleData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Row 3: Cost Efficiency */}
+        <div className="card p-5 anim-in anim-d3">
+          <div className="mb-4">
+            <h3 className="font-display text-sm font-bold text-black">Cost Efficiency by Method</h3>
+            <p className="text-[10px] text-muted mt-0.5">Cost per €1 raised — lower is better. Market average: €{avgCpe.toFixed(2)}</p>
+          </div>
+          <div className="space-y-2.5">
+            {costSorted.map((m, i) => {
+              const maxCpe = 0.50;
+              const pct = Math.min((m.cpe / maxCpe) * 100, 100);
+              const color = m.cpe <= 0.20 ? '#059669' : m.cpe <= 0.30 ? '#ffb548' : '#dc2626';
+              return (
+                <div key={i}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-gray-600">{m.method}</span>
+                    <span className="text-xs font-bold tabular" style={{ color }}>€{m.cpe.toFixed(2)}</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden bg-gray-100 relative">
+                    <div className="h-full rounded-full bar-fill" style={{ width: pct + '%', background: color, animationDelay: (i * 0.04) + 's' }} />
+                    {/* Average line */}
+                    <div className="absolute top-0 h-full w-0.5 bg-gray-400" style={{ left: (avgCpe / maxCpe * 100) + '%' }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Row 4: Method Detail Cards */}
+        <div>
+          <h3 className="font-display text-sm font-bold text-black mb-3">Method Details</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {MOCK_METHODS.map((m, i) => {
+              const chg = pctChange(m.income, m.prev);
+              return (
+                <div key={i} className="card p-4 anim-in" style={{ animationDelay: (i * 0.03) + 's' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2.5 h-2.5 rounded-sm" style={{ background: PALETTE[i % PALETTE.length] }} />
+                    <span className="text-xs font-bold text-black truncate">{m.method}</span>
+                  </div>
+                  <div className="font-display text-lg font-bold tabular text-black">{fmt(m.income)}</div>
+                  <div className="mt-1.5 space-y-1">
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-muted">Gifts</span>
+                      <span className="font-semibold tabular text-gray-700">{fmtN(m.gifts)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-muted">Avg Gift</span>
+                      <span className="font-semibold tabular text-gray-700">{fmt(m.avg_gift)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-muted">YoY</span>
+                      <ChangeBadge val={chg} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════════
+     TAB 3: BY SECTOR — placeholder
+     ═══════════════════════════════════════════ */
+  function BySectorTab() {
+    const totalInc = MOCK_SECTORS.reduce((s,d) => s + d.income, 0);
+    const [sortBy, setSortBy] = useState('income');
+    const [expandedSector, setExpanded] = useState(null);
+    const sorted = [...MOCK_SECTORS].sort((a,b) => b[sortBy] - a[sortBy]);
+    const growthData = MOCK_SECTORS.map(s => ({ sector: s.sector.length > 14 ? s.sector.slice(0,14)+'…' : s.sector, growth: pctChange(s.income, s.prev) })).sort((a,b) => b.growth - a.growth);
+    const heatMethods = ['major','regular','corporate','trusts','community','direct'];
+    const heatLabels = ['Major Gifts','Regular','Corporate','Trusts','Community','Direct Mail'];
+
+    return (
+      <div className="anim-in space-y-5">
+        {/* Row 1: Table + Donut */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div className="card p-5 xl:col-span-2 anim-in anim-d1">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-sm font-bold text-black">Sector Breakdown</h3>
+              <div className="flex gap-1">
+                {['income','orgs','fte'].map(k => (
+                  <button key={k} onClick={() => setSortBy(k)}
+                    className={`text-[10px] font-semibold px-2.5 py-1 rounded-md transition ${sortBy === k ? 'bg-brand-600 text-white' : 'bg-gray-100 text-muted hover:bg-gray-200'}`}>
+                    {k === 'income' ? 'Income' : k === 'orgs' ? 'Orgs' : 'FTE'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Table header */}
+            <div className="grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-muted pb-2 border-b border-gray-200 px-2">
+              <div className="col-span-3">Sector</div>
+              <div className="col-span-2 text-right">Income</div>
+              <div className="col-span-1 text-center">Orgs</div>
+              <div className="col-span-1 text-center">FTE</div>
+              <div className="col-span-1 text-right">Growth</div>
+              <div className="col-span-4">Market Share</div>
+            </div>
+            {sorted.map((d, i) => {
+              const pct = (d.income / totalInc) * 100;
+              const chg = pctChange(d.income, d.prev);
+              const isOpen = expandedSector === d.sector;
+              return (
+                <div key={i}>
+                  <div className="grid grid-cols-12 gap-2 items-center py-2.5 px-2 rounded-lg hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer"
+                    onClick={() => setExpanded(isOpen ? null : d.sector)}>
+                    <div className="col-span-3 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: PALETTE[i % PALETTE.length] }} />
+                      <span className="text-xs font-medium text-gray-800 truncate">{d.sector}</span>
+                    </div>
+                    <div className="col-span-2 text-right text-xs font-bold tabular text-black">{fmt(d.income)}</div>
+                    <div className="col-span-1 text-center text-xs text-muted">{d.orgs}</div>
+                    <div className="col-span-1 text-center text-xs text-muted">{d.fte}</div>
+                    <div className="col-span-1 text-right"><ChangeBadge val={chg} /></div>
+                    <div className="col-span-4 flex items-center gap-2">
+                      <div className="flex-1 h-2 rounded-full overflow-hidden bg-gray-100">
+                        <div className="h-full rounded-full bar-fill" style={{ width: pct + '%', background: PALETTE[i % PALETTE.length], animationDelay: (i * 0.03) + 's' }} />
+                      </div>
+                      <span className="text-[10px] tabular text-muted w-10 text-right">{pct.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                  {/* Expanded detail */}
+                  {isOpen && (
+                    <div className="px-4 py-3 mb-2 bg-brand-50 rounded-lg mx-2 text-xs space-y-1">
+                      <div className="font-bold text-brand-600 mb-1">{d.sector} — Detail</div>
+                      <div className="grid grid-cols-4 gap-3">
+                        <div><span className="text-muted">Total Income</span><div className="font-bold tabular">{fmt(d.income)}</div></div>
+                        <div><span className="text-muted">Organisations</span><div className="font-bold">{d.orgs}</div></div>
+                        <div><span className="text-muted">Avg FTE</span><div className="font-bold">{d.fte}</div></div>
+                        <div><span className="text-muted">Income/Org</span><div className="font-bold tabular">{fmt(d.income / d.orgs)}</div></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Donut */}
+          <div className="card p-5 anim-in anim-d2">
+            <h3 className="font-display text-sm font-bold text-black mb-3">Top Sectors</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={MOCK_SECTORS.slice(0,8).map(s => ({ name: s.sector, value: s.income }))} cx="50%" cy="50%" outerRadius={100} innerRadius={42} paddingAngle={2} dataKey="value" strokeWidth={0} label={PieLabel}>
+                  {MOCK_SECTORS.slice(0,8).map((_, i) => <Cell key={i} fill={PALETTE[i]} />)}
+                </Pie>
+                <Tooltip content={<Tip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2 pt-2 border-t border-gray-100">
+              {MOCK_SECTORS.slice(0,8).map((s, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-[10px] text-muted truncate">
+                  <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: PALETTE[i] }} />
+                  {s.sector}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Growth Ranking — Diverging Bar */}
+        <div className="card p-5 anim-in anim-d2">
+          <h3 className="font-display text-sm font-bold text-black mb-4">Sector Growth Ranking</h3>
+          <ResponsiveContainer width="100%" height={360}>
+            <BarChart data={growthData} layout="vertical" margin={{ left: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" tickFormatter={v => v + '%'} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} domain={['dataMin - 2', 'dataMax + 2']} />
+              <YAxis type="category" dataKey="sector" width={120} tick={{ fontSize:10, fill:'#4B5563' }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={v => v.toFixed(1) + '%'} />
+              <ReferenceLine x={0} stroke="#d1d5db" />
+              <Bar dataKey="growth" name="YoY Growth" radius={[0,4,4,0]} maxBarSize={18} label={({ x, y, width, height, value }) => <text x={width >= 0 ? x + width + 5 : x + width - 5} y={y + height / 2} dy={4} textAnchor={width >= 0 ? 'start' : 'end'} fontSize={9} fontWeight={600} fill="#374151" fontFamily="DM Sans">{value.toFixed(1)}%</text>}>
+                {growthData.map((d, i) => <Cell key={i} fill={d.growth >= 0 ? '#059669' : '#dc2626'} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Row 3: Heatmap */}
+        <div className="card p-5 anim-in anim-d3">
+          <div className="mb-4">
+            <h3 className="font-display text-sm font-bold text-black">Sector × Method Heatmap</h3>
+            <p className="text-[10px] text-muted mt-0.5">Color intensity shows income concentration — darker = higher reliance on that method</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr>
+                  <th className="text-left py-2 px-2 text-[10px] font-bold uppercase text-muted w-36">Sector</th>
+                  {heatLabels.map((l,i) => <th key={i} className="text-center py-2 px-1 text-[10px] font-bold uppercase text-muted">{l}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {HEAT.map((row, ri) => (
+                  <tr key={ri} className="border-t border-gray-50">
+                    <td className="py-2 px-2 font-medium text-gray-700">{row.sector}</td>
+                    {heatMethods.map((m, ci) => {
+                      const v = row[m];
+                      const opacity = Math.max(0.08, v / 100);
+                      return (
+                        <td key={ci} className="py-1.5 px-1">
+                          <div className="heat-cell" style={{ background: `rgba(255,181,72,${opacity})`, color: v > 60 ? '#7c4a00' : '#9b8a6b' }}>
+                            {v}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════════
+     TAB 4: MY ORG (includes benchmarking)
+     ═══════════════════════════════════════════ */
+  function MyOrgTab() {
+    const o = MOCK_ORG;
+    const [subTab, setSubTab] = useState('performance');
+    const [compareKey, setCompareKey] = useState('market');
+
+    /* ── COMPARISON DATASETS ──────────────────
+       Each key maps to a benchmark profile.
+       When Supabase is connected, these will be fetched dynamically
+       based on the selected comparison. For now: mock data.
+    */
+    const COMPARE_OPTIONS = [
+      { key: 'market', label: 'Market Average (All Orgs)', group: 'Market' },
+      { key: 'band_small', label: 'Small Orgs (Under €25K)', group: 'Size Band' },
+      { key: 'band_medium', label: 'Medium Orgs (€25K–€100K)', group: 'Size Band' },
+      { key: 'band_large', label: 'Large Orgs (Over €100K)', group: 'Size Band' },
+      { key: 'sector_health', label: 'Health Sector', group: 'Sector' },
+      { key: 'sector_children', label: 'Children & Youth', group: 'Sector' },
+      { key: 'sector_intl', label: 'International Development', group: 'Sector' },
+      { key: 'sector_disability', label: 'Disability', group: 'Sector' },
+      { key: 'sector_community', label: 'Community Development', group: 'Sector' },
+      { key: 'sector_housing', label: 'Housing & Homelessness', group: 'Sector' },
+      { key: 'top_quartile', label: 'Top 25% Performers', group: 'Ranking' },
+      { key: 'year_2023', label: 'Your Org in 2023', group: 'Time' },
+    ];
+    const COMPARE_DATA = {
+      market:         { income: 9670000, gifts: 45800, avg_gift: 42, retention: 58, cpe: 0.25, methods: MKT_MIX, retTrend: [52,54,55,57,58] },
+      band_small:     { income: 18200, gifts: 520, avg_gift: 35, retention: 48, cpe: 0.30, methods: [{ method:'Community',pct:30 },{ method:'Direct Mail',pct:25 },{ method:'Regular Giving',pct:20 },{ method:'Corporate',pct:12 },{ method:'Other',pct:13 }], retTrend: [42,44,45,47,48] },
+      band_medium:    { income: 62800, gifts: 1840, avg_gift: 68, retention: 55, cpe: 0.25, methods: [{ method:'Regular Giving',pct:28 },{ method:'Corporate',pct:22 },{ method:'Community',pct:18 },{ method:'Major Gifts',pct:15 },{ method:'Other',pct:17 }], retTrend: [48,50,52,54,55] },
+      band_large:     { income: 385000, gifts: 8200, avg_gift: 142, retention: 62, cpe: 0.23, methods: [{ method:'Major Gifts',pct:32 },{ method:'Regular Giving',pct:22 },{ method:'Corporate',pct:16 },{ method:'Trusts & Foundations',pct:14 },{ method:'Other',pct:16 }], retTrend: [55,57,58,60,62] },
+      sector_health:  { income: 11000000, gifts: 62000, avg_gift: 55, retention: 61, cpe: 0.22, methods: [{ method:'Major Gifts',pct:30 },{ method:'Regular Giving',pct:25 },{ method:'Corporate',pct:18 },{ method:'Community',pct:12 },{ method:'Other',pct:15 }], retTrend: [54,56,58,59,61] },
+      sector_children:{ income: 11142857, gifts: 58000, avg_gift: 48, retention: 56, cpe: 0.24, methods: [{ method:'Regular Giving',pct:32 },{ method:'Community',pct:22 },{ method:'Corporate',pct:16 },{ method:'Major Gifts',pct:14 },{ method:'Other',pct:16 }], retTrend: [50,52,53,55,56] },
+      sector_intl:    { income: 11000000, gifts: 72000, avg_gift: 38, retention: 54, cpe: 0.26, methods: [{ method:'Regular Giving',pct:28 },{ method:'Direct Mail',pct:22 },{ method:'Trusts & Foundations',pct:20 },{ method:'Major Gifts',pct:15 },{ method:'Other',pct:15 }], retTrend: [48,50,51,53,54] },
+      sector_disability:{ income: 9818181, gifts: 48000, avg_gift: 42, retention: 57, cpe: 0.25, methods: [{ method:'Regular Giving',pct:30 },{ method:'Community',pct:25 },{ method:'Corporate',pct:15 },{ method:'Trusts & Foundations',pct:15 },{ method:'Other',pct:15 }], retTrend: [50,52,54,55,57] },
+      sector_community:{ income: 9600000, gifts: 45000, avg_gift: 40, retention: 52, cpe: 0.28, methods: [{ method:'Community',pct:35 },{ method:'Regular Giving',pct:22 },{ method:'Corporate',pct:15 },{ method:'Direct Mail',pct:13 },{ method:'Other',pct:15 }], retTrend: [45,47,49,51,52] },
+      sector_housing: { income: 9000000, gifts: 38000, avg_gift: 45, retention: 55, cpe: 0.24, methods: [{ method:'Trusts & Foundations',pct:28 },{ method:'Major Gifts',pct:24 },{ method:'Corporate',pct:18 },{ method:'Regular Giving',pct:16 },{ method:'Other',pct:14 }], retTrend: [48,50,52,53,55] },
+      top_quartile:   { income: 680000, gifts: 14200, avg_gift: 95, retention: 74, cpe: 0.18, methods: [{ method:'Major Gifts',pct:28 },{ method:'Regular Giving',pct:24 },{ method:'Corporate',pct:18 },{ method:'Trusts & Foundations',pct:14 },{ method:'Other',pct:16 }], retTrend: [66,68,70,72,74] },
+      year_2023:      { income: 374000, gifts: 7860, avg_gift: 47.58, retention: 72, cpe: 0.24, methods: o.methods, retTrend: [65,67,69,72,72] },
+    };
+
+    const comp = COMPARE_DATA[compareKey];
+    const compLabel = COMPARE_OPTIONS.find(c => c.key === compareKey)?.label || 'Comparison';
+
+    // Derived values using selected comparison
+    const incChg = pctChange(o.income, o.prev_income);
+    const giftChg = pctChange(o.gifts, o.prev_gifts);
+    const agChg = pctChange(o.avg_gift, o.prev_avg_gift);
+    const retDiff = o.retention - comp.retention;
+    const cpeDiff = comp.cpe - o.cpe;
+
+    // Benchmarking data
+    const quadrantData = [
+      { x: 0.30, y: 6.7, z: 32, name: 'Small' },
+      { x: 0.25, y: 8.4, z: 42, name: 'Medium' },
+      { x: 0.23, y: 10.8, z: 26, name: 'Large' },
+      { x: o.cpe, y: incChg, z: 1, name: 'Your Org' },
+    ];
+    const bandColors = ['#0e7c86','#002d74','#ffb548','#dc2626'];
+
+    // Funnel data
+    const funnel = [
+      { stage: 'Total Donors', val: o.donors, pct: 100, color: '#002d74' },
+      { stage: 'Retained', val: o.retained, pct: (o.retained / o.donors * 100), color: '#059669' },
+      { stage: 'New Donors', val: o.new_donors, pct: (o.new_donors / o.donors * 100), color: '#ffb548' },
+      { stage: 'Lapsed', val: o.lapsed, pct: (o.lapsed / o.donors * 100), color: '#dc2626' },
+    ];
+    // Comparison bar data — uses selected comparison
+    const compData = [
+      { metric: 'Income', org: o.income, compare: comp.income },
+      { metric: 'Gifts', org: o.gifts, compare: comp.gifts },
+      { metric: 'Avg Gift', org: o.avg_gift, compare: comp.avg_gift },
+      { metric: 'Retention %', org: o.retention, compare: comp.retention },
+    ];
+    // Retention trend — uses selected comparison
+    const retTrend = o.history.map((h,i) => ({ year: h.year, org: h.retention, compare: comp.retTrend[i] }));
+
+    return (
+      <div className="anim-in space-y-5">
+        {/* Compare Selector + KPI Cards */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-1">
+          <div className="flex items-center gap-2">
+            <Icon name="git-compare" size={18} stroke="#002d74" />
+            <span className="text-xs font-bold text-black uppercase tracking-wider">Compare against:</span>
+          </div>
+          <select value={compareKey} onChange={e => setCompareKey(e.target.value)}
+            className="bg-white border border-gray-200 text-sm font-semibold rounded-lg px-4 py-2.5 cursor-pointer text-brand-600 shadow-sm hover:border-brand-600 transition focus:outline-none focus:ring-2 focus:ring-brand-600/20 max-w-sm"
+            style={{ backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='%23002d74'/%3E%3C/svg%3E\")", backgroundRepeat:'no-repeat', backgroundPosition:'right 12px center', appearance:'none', paddingRight:'36px' }}>
+            {(() => {
+              const groups = [...new Set(COMPARE_OPTIONS.map(o => o.group))];
+              return groups.map(g => (
+                <optgroup key={g} label={g}>
+                  {COMPARE_OPTIONS.filter(o => o.group === g).map(o => (
+                    <option key={o.key} value={o.key}>{o.label}</option>
+                  ))}
+                </optgroup>
+              ));
+            })()}
+          </select>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+          {[
+            { label: 'Your Income', val: fmt(o.income), sub: `vs ${fmt(comp.income)}`, chg: incChg },
+            { label: 'Total Gifts', val: fmtN(o.gifts), sub: `vs ${fmtN(comp.gifts)}`, chg: giftChg },
+            { label: 'Average Gift Size', val: '€' + o.avg_gift.toFixed(2), sub: `vs €${comp.avg_gift.toFixed(0)}`, chg: agChg },
+            { label: 'Donor Retention', val: o.retention + '%', sub: `vs ${comp.retention}%`, chg: retDiff },
+            { label: 'Cost per €1 Raised', val: '€' + o.cpe.toFixed(2), sub: `vs €${comp.cpe.toFixed(2)}`, chg: cpeDiff * 100 },
+          ].map((k, i) => (
+            <div key={i} className="card p-4 anim-in" style={{ animationDelay: (i * 0.04) + 's' }}>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-1">{k.label}</div>
+              <div className="font-display text-2xl font-extrabold tabular text-black">{k.val}</div>
+              <div className="mt-1 flex items-center gap-2">
+                <ChangeBadge val={k.chg} />
+                {k.sub && <span className="text-[10px] text-muted">{k.sub}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Sub-navigation within My Org */}
+        <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1">
+          {[
+            { key: 'performance', label: 'Performance', icon: 'activity' },
+            { key: 'benchmarks', label: 'Benchmarks', icon: 'gauge' },
+            { key: 'retention', label: 'Retention', icon: 'users' },
+            { key: 'insights', label: 'Insights', icon: 'lightbulb' },
+            { key: 'history', label: 'History', icon: 'clock' },
+          ].map(t => (
+            <button key={t.key} onClick={() => setSubTab(t.key)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all ${subTab === t.key ? 'bg-brand-600 text-white' : 'text-muted hover:bg-gray-50'}`}>
+              <Icon name={t.icon} size={14} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── SUB-TAB: PERFORMANCE ────────────── */}
+        {subTab === 'performance' && (() => {
+          // Recurring Giving highlight
+          const recurringMethod = o.methods.find(m => m.method === 'Regular Giving');
+          const recurringPct = recurringMethod ? recurringMethod.pct : 0;
+          const recurringIncome = Math.round(o.income * recurringPct / 100);
+          const mktRecurring = MOCK_METHODS.find(m => m.method === 'Regular Giving');
+          const mktRecurringPct = mktRecurring ? mktRecurring.pct : 0;
+
+          // Donor Expansion — % of donors who increased giving
+          // Based on: if avg gift grew and retained donors stayed, expansion = retained × avg_gift_growth
+          const avgGiftGrowth = pctChange(o.avg_gift, o.prev_avg_gift);
+          const expansionRate = Math.min(95, Math.max(15, 40 + avgGiftGrowth * 3)); // simulated from growth signal
+          const mktExpansionRate = 32; // industry benchmark ~32% (Virtuous 2025 report)
+          const expandedDonors = Math.round(o.retained * expansionRate / 100);
+          const expandedRevenue = Math.round(expandedDonors * (o.avg_gift - o.prev_avg_gift));
+
+          return (
+          <div className="space-y-5 anim-in">
+            {/* Recurring Giving + Donor Expansion Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Recurring Giving Highlight */}
+              <div className="card p-5 border-l-[3px] border-l-brand-600">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon name="repeat" size={16} stroke="#002d74" />
+                  <h3 className="font-display text-sm font-bold text-black">Recurring Giving</h3>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-semibold tracking-wider">Recurring Income</div>
+                    <div className="font-display text-xl font-extrabold tabular text-brand-600">{fmt(recurringIncome)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-semibold tracking-wider">% of Total</div>
+                    <div className="font-display text-xl font-extrabold tabular text-black">{recurringPct}%</div>
+                    <div className="text-[9px] text-muted">Market: {mktRecurringPct}%</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-semibold tracking-wider">Status</div>
+                    <div className={`text-sm font-bold ${recurringPct >= mktRecurringPct ? 'text-ok' : 'text-bad'}`}>
+                      {recurringPct >= mktRecurringPct ? 'Above Market' : 'Below Market'}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2.5 rounded-full bg-gray-100 relative overflow-hidden">
+                      <div className="h-full rounded-full bg-brand-600" style={{ width: recurringPct + '%' }} />
+                      <div className="absolute top-0 h-full w-0.5 bg-gold-400" style={{ left: mktRecurringPct + '%' }} title={'Market: ' + mktRecurringPct + '%'} />
+                    </div>
+                    <span className="text-[10px] font-bold tabular text-brand-600">{recurringPct}%</span>
+                  </div>
+                  <div className="flex justify-between text-[8px] text-muted mt-1">
+                    <span>0%</span>
+                    <span className="text-gold-500">▲ Market {mktRecurringPct}%</span>
+                    <span>50%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Donor Expansion */}
+              <div className="card p-5 border-l-[3px] border-l-ok">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon name="arrow-up-circle" size={16} stroke="#059669" />
+                  <h3 className="font-display text-sm font-bold text-black">Donor Expansion</h3>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-semibold tracking-wider">Expansion Rate</div>
+                    <div className="font-display text-xl font-extrabold tabular text-ok">{expansionRate.toFixed(0)}%</div>
+                    <div className="text-[9px] text-muted">Market: {mktExpansionRate}%</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-semibold tracking-wider">Donors Who Upgraded</div>
+                    <div className="font-display text-xl font-extrabold tabular text-black">{fmtN(expandedDonors)}</div>
+                    <div className="text-[9px] text-muted">of {fmtN(o.retained)} retained</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-semibold tracking-wider">Extra Revenue</div>
+                    <div className="font-display text-xl font-extrabold tabular text-ok">{fmt(expandedRevenue)}</div>
+                    <div className="text-[9px] text-muted">from upgrades</div>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600 leading-relaxed">
+                  <strong>{expansionRate.toFixed(0)}%</strong> of your retained donors increased their giving this year.
+                  The market average is <strong>{mktExpansionRate}%</strong>.
+                  {expansionRate > mktExpansionRate
+                    ? ' Your donor development strategy is outperforming the sector.'
+                    : ' Consider targeted upgrade campaigns to boost this metric.'}
+                </div>
+              </div>
+            </div>
+
+            {/* Org vs Market Bars + Method Mix */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="card p-5">
+                <h3 className="font-display text-sm font-bold text-black mb-4">Your Performance vs Market</h3>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={compData} barGap={6}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="metric" tick={{ fontSize:12, fill:'#6b7280' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={50} />
+                    <Tooltip content={<Tip />} />
+                    <Legend wrapperStyle={{ fontSize:12 }} />
+                    <Bar dataKey="org" name="Your Org" fill="#002d74" radius={[5,5,0,0]} maxBarSize={36} label={<BarLabelTop />} />
+                    <Bar dataKey="compare" name={compLabel} fill="#ffb548" radius={[5,5,0,0]} maxBarSize={36} label={<BarLabelTop />} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="card p-5">
+                <h3 className="font-display text-sm font-bold text-black mb-4">Method Mix Comparison</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase text-center text-muted mb-1">Your Mix</div>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart>
+                        <Pie data={o.methods.map(m => ({ name: m.method, value: m.pct }))} cx="50%" cy="50%" outerRadius={70} innerRadius={30} dataKey="value" strokeWidth={0} paddingAngle={2} label={PieLabel}>
+                          {o.methods.map((_, i) => <Cell key={i} fill={PALETTE[i]} />)}
+                        </Pie>
+                        <Tooltip content={<Tip vfmt={v => v + '%'} />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase text-center text-muted mb-1 truncate px-1" title={compLabel}>{compLabel.length > 22 ? compLabel.slice(0,20) + '…' : compLabel}</div>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart>
+                        <Pie data={comp.methods.map(m => ({ name: m.method, value: m.pct }))} cx="50%" cy="50%" outerRadius={70} innerRadius={30} dataKey="value" strokeWidth={0} paddingAngle={2} label={PieLabel}>
+                          {comp.methods.map((_, i) => <Cell key={i} fill={PALETTE[i]} />)}
+                        </Pie>
+                        <Tooltip content={<Tip vfmt={v => v + '%'} />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-x-2 gap-y-1 mt-2 pt-2 border-t border-gray-100">
+                  {o.methods.map((m, i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-[10px] text-muted">
+                      <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: PALETTE[i] }} />
+                      {m.method}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Strengths & Weaknesses */}
+            <div>
+              <h3 className="font-display text-sm font-bold text-black mb-3">Strength & Weakness Analysis</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  { type: 'strength', icon: 'heart-handshake', title: 'Donor Retention', desc: `You outperform the market by ${retDiff} percentage points on donor retention.` },
+                  { type: 'strength', icon: 'piggy-bank', title: 'Cost Efficiency', desc: `Your cost per €1 raised (€${o.cpe.toFixed(2)}) beats the market average (€${o.mkt_cpe.toFixed(2)}).` },
+                  { type: 'strength', icon: 'trending-up', title: 'Income Growth', desc: `${incChg.toFixed(1)}% income growth year-on-year, outpacing the sector.` },
+                  { type: 'weakness', icon: 'shuffle', title: 'Method Diversity', desc: 'You rely heavily on Regular Giving (35%). Consider diversifying into Trusts & Foundations.' },
+                ].map((s, i) => (
+                  <div key={i} className={`card p-4 border-l-[3px] ${s.type === 'strength' ? 'border-l-ok bg-emerald-50/30' : 'border-l-gold-400 bg-gold-50/30'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon name={s.icon} size={16} stroke={s.type === 'strength' ? '#059669' : '#ffb548'} />
+                      <span className="text-xs font-bold text-black">{s.title}</span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 leading-relaxed">{s.desc}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        )}
-        {children}
-      </div>
-    );
-  }
+        ); })()}
 
-  /* ── PROGRESS BAR ─────────────────────── */
-  function MethodBar({ name, value, total, index }) {
-    const pct = total > 0 ? (value / total) * 100 : 0;
-    const color = BRAND_COLORS[index % BRAND_COLORS.length];
-    return (
-      <div className="mb-3.5 group">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-xs font-medium text-gray-500 group-hover:text-gray-700 transition-colors">{name}</span>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold tabular text-gray-800">{fmt(value)}</span>
-            <span className="text-[10px] tabular text-gray-400 w-10 text-right">{pct.toFixed(1)}%</span>
-          </div>
-        </div>
-        <div className="h-2 rounded-full overflow-hidden bg-gray-100">
-          <div className="h-full rounded-full bar-fill" style={{ width: pct + '%', background: color, animationDelay: (index * 0.06) + 's' }} />
-        </div>
-      </div>
-    );
-  }
-
-  /* ── SECTOR TABLE ─────────────────────── */
-  function SectorTable({ data }) {
-    const total = data.reduce((s, d) => s + d.income, 0);
-    return (
-      <div>
-        <div className="grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-3 border-b border-gray-100 px-3">
-          <div className="col-span-4">Sector</div>
-          <div className="col-span-3 text-right">Income</div>
-          <div className="col-span-1 text-center">Orgs</div>
-          <div className="col-span-4">Market Share</div>
-        </div>
-        {data.map((d, i) => {
-          const pct = (d.income / total) * 100;
-          return (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
-              <div className="col-span-4 flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: BRAND_COLORS[i % BRAND_COLORS.length] }} />
-                <span className="text-xs font-medium text-gray-700">{d.sector}</span>
+        {/* ── SUB-TAB: BENCHMARKS ─────────────── */}
+        {subTab === 'benchmarks' && (
+          <div className="space-y-5 anim-in">
+            {/* Radar + Quadrant */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="card p-5">
+                <h3 className="font-display text-sm font-bold text-black mb-4">Performance Radar</h3>
+                <ResponsiveContainer width="100%" height={340}>
+                  <RadarChart cx="50%" cy="50%" outerRadius="65%" data={MOCK_RADAR.map(r => ({ ...r, compare: r.market }))}>
+                    <PolarGrid stroke="#e5e7eb" />
+                    <PolarAngleAxis dataKey="metric" tick={{ fontSize:10, fill:'#6b7280' }} />
+                    <PolarRadiusAxis angle={30} domain={[0,100]} tick={false} axisLine={false} />
+                    <Radar name="Your Org" dataKey="org" stroke="#002d74" fill="#002d74" fillOpacity={0.15} strokeWidth={2} dot={{ r:4, fill:'#002d74', stroke:'#fff', strokeWidth:1 }} />
+                    <Radar name={compLabel} dataKey="compare" stroke="#ffb548" fill="#ffb548" fillOpacity={0.08} strokeWidth={2} strokeDasharray="4 4" dot={{ r:4, fill:'#ffb548', stroke:'#fff', strokeWidth:1 }} />
+                    <Tooltip content={<Tip vfmt={v => v + ' pts'} />} />
+                    <Legend wrapperStyle={{ fontSize:12 }} />
+                  </RadarChart>
+                </ResponsiveContainer>
               </div>
-              <div className="col-span-3 text-right text-xs font-bold tabular text-gray-900">{fmt(d.income)}</div>
-              <div className="col-span-1 text-center text-xs text-gray-400">{d.orgs}</div>
-              <div className="col-span-4 flex items-center gap-2">
-                <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-gray-100">
-                  <div className="h-full rounded-full bar-fill" style={{
-                    width: pct + '%',
-                    background: BRAND_COLORS[i % BRAND_COLORS.length],
-                    animationDelay: (i * 0.04) + 's'
-                  }} />
+
+              <div className="card p-5">
+                <div className="mb-4">
+                  <h3 className="font-display text-sm font-bold text-black">Efficiency Quadrant</h3>
+                  <p className="text-[10px] text-muted mt-0.5">Cost per €1 raised vs Income growth — your org vs size bands</p>
                 </div>
-                <span className="text-[10px] tabular text-gray-400 w-10 text-right">{pct.toFixed(1)}%</span>
+                <ResponsiveContainer width="100%" height={340}>
+                  <ScatterChart margin={{ bottom: 20, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" dataKey="x" name="Cost/€1" tick={{ fontSize:10, fill:'#9CA3AF' }} axisLine={false} tickLine={false}
+                      label={{ value:'Cost per €1 Raised', position:'bottom', fontSize:10, fill:'#9CA3AF', offset:5 }} domain={[0.15, 0.40]} tickFormatter={v => '€' + v.toFixed(2)} />
+                    <YAxis type="number" dataKey="y" name="Growth %" tick={{ fontSize:10, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={40}
+                      label={{ value:'Income Growth %', angle:-90, position:'insideLeft', fontSize:10, fill:'#9CA3AF' }} domain={[4, 14]} />
+                    <ZAxis type="number" dataKey="z" range={[80, 400]} />
+                    <ReferenceLine x={0.26} stroke="#d1d5db" strokeDasharray="4 4" />
+                    <ReferenceLine y={8} stroke="#d1d5db" strokeDasharray="4 4" />
+                    <Tooltip content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0].payload;
+                      return <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 16px rgba(0,0,0,0.1)', fontSize:12 }}>
+                        <div style={{ fontWeight:700, marginBottom:4 }}>{d.name}</div>
+                        <div>Cost/€1: <strong>€{d.x.toFixed(2)}</strong></div>
+                        <div>Growth: <strong>{d.y.toFixed(1)}%</strong></div>
+                      </div>;
+                    }} />
+                    <Scatter data={quadrantData}>
+                      {quadrantData.map((_, i) => <Cell key={i} fill={bandColors[i]} />)}
+                    </Scatter>
+                  </ScatterChart>
+                </ResponsiveContainer>
+                <div className="flex justify-center gap-4 mt-2">
+                  {[...MOCK_BANDS.map((b,i) => ({ label: b.band, color: bandColors[i] })), { label: 'Your Org', color: '#dc2626' }].map((b,i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-[10px] text-muted">
+                      <span className="w-3 h-3 rounded-full" style={{ background: b.color }} />
+                      {b.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Size Band Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {MOCK_BANDS.map((b, i) => {
+                const isYou = o.band === b.band;
+                return (
+                  <div key={i} className={`card p-5 border-t-[3px] ${isYou ? 'ring-2 ring-brand-600/30' : ''}`} style={{ borderTopColor: ['#0e7c86','#002d74','#ffb548'][i] }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="text-sm font-bold text-black flex items-center gap-2">
+                          {b.band}
+                          {isYou && <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-600 text-white">You</span>}
+                        </div>
+                        <div className="text-[10px] text-muted">{b.label} · {b.orgs} orgs</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { l: 'Avg Income', v: fmt(b.inc) },
+                        { l: 'Avg Costs', v: fmt(b.cost) },
+                        { l: 'Avg FTE', v: b.fte.toFixed(1) },
+                        { l: 'Cost per €1', v: '€' + b.cpe.toFixed(2) },
+                        { l: 'Avg Gift', v: fmt(b.ag) },
+                        { l: 'Income/FTE', v: fmt(b.ipf) },
+                      ].map((s, si) => (
+                        <div key={si} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
+                          <span className="text-[11px] text-muted">{s.l}</span>
+                          <span className="text-[11px] font-bold tabular text-black">{s.v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* FTE Productivity */}
+            <div className="card p-5">
+              <h3 className="font-display text-sm font-bold text-black mb-4">FTE Productivity by Size Band</h3>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={MOCK_BANDS.map((b,i) => ({ band: b.band, 'Income/FTE': b.ipf, 'Cost/FTE': Math.round(b.cost / b.fte) }))} barGap={8}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="band" tick={{ fontSize:12, fill:'#6b7280' }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={65} />
+                  <Tooltip content={<Tip />} />
+                  <Legend wrapperStyle={{ fontSize:12 }} />
+                  <Bar dataKey="Income/FTE" fill="#002d74" radius={[6,6,0,0]} maxBarSize={48} label={<BarLabelTop />} />
+                  <Bar dataKey="Cost/FTE" fill="#ffb548" radius={[6,6,0,0]} maxBarSize={48} label={<BarLabelTop />} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* ── SUB-TAB: RETENTION ──────────────── */}
+        {subTab === 'retention' && (
+          <div className="space-y-5 anim-in">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Funnel */}
+              <div className="card p-5">
+                <h3 className="font-display text-sm font-bold text-black mb-4">Donor Retention Funnel</h3>
+                <div className="space-y-3">
+                  {funnel.map((f, i) => {
+                    const maxW = 100;
+                    const w = i === 0 ? maxW : (f.val / funnel[0].val) * maxW;
+                    return (
+                      <div key={i} style={{ paddingLeft: `${(maxW - w) / 2}%`, paddingRight: `${(maxW - w) / 2}%` }}>
+                        <div className="rounded-lg py-3 px-4" style={{ background: f.color + '18', borderLeft: `4px solid ${f.color}` }}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold" style={{ color: f.color }}>{f.stage}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold tabular text-black">{fmtN(f.val)}</span>
+                              <span className="text-[10px] tabular text-muted">{f.pct.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                        </div>
+                        {i < funnel.length - 1 && (
+                          <div className="flex justify-center my-1">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="#d1d5db"><path d="M6 2L10 7H2L6 2Z" transform="rotate(180 6 6)"/></svg>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Retention Trend */}
+              <div className="card p-5">
+                <h3 className="font-display text-sm font-bold text-black mb-4">Retention Trend</h3>
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={retTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" tick={{ fontSize:12, fill:'#9CA3AF' }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[40, 80]} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={35} tickFormatter={v => v + '%'} />
+                    <Tooltip content={<Tip vfmt={v => v + '%'} />} />
+                    <Legend wrapperStyle={{ fontSize:12 }} />
+                    <Line type="monotone" dataKey="org" name="Your Org" stroke="#002d74" strokeWidth={2.5} dot={{ r:4, fill:'#002d74', stroke:'#fff', strokeWidth:2 }}
+                      label={({ x, y, value }) => <text x={x} y={y - 10} textAnchor="middle" fontSize={9} fontWeight={600} fill="#002d74" fontFamily="DM Sans">{value}%</text>} />
+                    <Line type="monotone" dataKey="compare" name={compLabel} stroke="#ffb548" strokeWidth={2} strokeDasharray="6 3" dot={{ r:3, fill:'#ffb548', stroke:'#fff', strokeWidth:2 }}
+                      label={({ x, y, value }) => <text x={x} y={y + 16} textAnchor="middle" fontSize={9} fontWeight={600} fill="#b37a00" fontFamily="DM Sans">{value}%</text>} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Retention KPIs */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: 'Retention Rate', val: o.retention + '%', vs: `Market ${o.mkt_retention}%`, good: o.retention > o.mkt_retention },
+                { label: 'Retained Donors', val: fmtN(o.retained), vs: `${(o.retained / o.donors * 100).toFixed(0)}% of total`, good: true },
+                { label: 'New Donors', val: fmtN(o.new_donors), vs: `${(o.new_donors / o.donors * 100).toFixed(0)}% of total`, good: true },
+                { label: 'Lapsed Donors', val: fmtN(o.lapsed), vs: `${(o.lapsed / o.donors * 100).toFixed(0)}% of total`, good: false },
+              ].map((k, i) => (
+                <div key={i} className={`card p-4 border-l-[3px] ${k.good ? 'border-l-ok' : 'border-l-bad'}`}>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-1">{k.label}</div>
+                  <div className="font-display text-xl font-extrabold tabular text-black">{k.val}</div>
+                  <div className="text-[10px] text-muted mt-1">{k.vs}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SUB-TAB: INSIGHTS (premium analytics) ── */}
+        {subTab === 'insights' && (() => {
+          // ── DONOR LIFETIME VALUE ──
+          // LTV = avg_gift × (retention / (1 - retention))
+          // This is the standard simplified LTV formula for recurring donors
+          const retRate = o.retention / 100;
+          const mktRetRate = comp.retention / 100;
+          const ltv = o.avg_gift * (retRate / (1 - retRate));
+          const mktLtv = comp.avg_gift * (mktRetRate / (1 - mktRetRate));
+          const ltvDiff = ((ltv - mktLtv) / mktLtv * 100);
+          const avgLifespan = 1 / (1 - retRate); // years
+          const mktLifespan = 1 / (1 - mktRetRate);
+          const projectedLtvTotal = ltv * o.donors;
+          const annualValueAtRisk = o.avg_gift * o.lapsed; // lost income from lapsed donors
+
+          // ── INCOME FORECASTING ──
+          // Simple linear regression on 5 years of data
+          const hist = o.history;
+          const n = hist.length;
+          const xMean = hist.reduce((s,h,i) => s + i, 0) / n;
+          const yMean = hist.reduce((s,h) => s + h.income, 0) / n;
+          const slope = hist.reduce((s,h,i) => s + (i - xMean) * (h.income - yMean), 0) / hist.reduce((s,h,i) => s + (i - xMean) ** 2, 0);
+          const intercept = yMean - slope * xMean;
+          const forecast2025 = intercept + slope * n;
+          const forecast2026 = intercept + slope * (n + 1);
+          // Confidence: ±1 std error
+          const residuals = hist.map((h,i) => h.income - (intercept + slope * i));
+          const stdErr = Math.sqrt(residuals.reduce((s,r) => s + r * r, 0) / (n - 2));
+          const forecastData = [
+            ...hist.map(h => ({ year: h.year, income: h.income, type: 'actual' })),
+            { year: '2025', income: Math.round(forecast2025), low: Math.round(forecast2025 - stdErr * 1.5), high: Math.round(forecast2025 + stdErr * 1.5), type: 'forecast' },
+            { year: '2026', income: Math.round(forecast2026), low: Math.round(forecast2026 - stdErr * 2), high: Math.round(forecast2026 + stdErr * 2), type: 'forecast' },
+          ];
+          const growthRate = slope / yMean * 100;
+
+          // ── PERCENTILE RANKINGS ──
+          // Simulated percentile positions (in production: calculated from all orgs in Supabase)
+          const percentiles = [
+            { metric: 'Total Income', pct: 72, color: '#002d74' },
+            { metric: 'Donor Retention', pct: 85, color: '#059669' },
+            { metric: 'Cost Efficiency', pct: 78, color: '#0e7c86' },
+            { metric: 'Average Gift Size', pct: 45, color: '#ffb548' },
+            { metric: 'Gift Volume', pct: 68, color: '#6366f1' },
+            { metric: 'Method Diversity', pct: 34, color: '#dc2626' },
+            { metric: 'Income Growth', pct: 81, color: '#059669' },
+            { metric: 'FTE Productivity', pct: 62, color: '#0e7c86' },
+          ];
+
+          // ── METHOD DEPENDENCY RISK ──
+          // HHI (Herfindahl-Hirschman Index): sum of squared market shares
+          // < 1500 = diversified, 1500-2500 = moderate, > 2500 = concentrated
+          const hhi = o.methods.reduce((s,m) => s + (m.pct * m.pct), 0) * 100;
+          const topMethod = o.methods.reduce((a,b) => a.pct > b.pct ? a : b);
+          const topMethodImpact = o.income * (topMethod.pct / 100);
+          const ifDropped20 = topMethodImpact * 0.20;
+          const riskLevel = hhi > 2500 ? 'High' : hhi > 1500 ? 'Moderate' : 'Low';
+          const riskColor = hhi > 2500 ? '#dc2626' : hhi > 1500 ? '#ffb548' : '#059669';
+
+          return (
+            <div className="space-y-5 anim-in">
+              {/* Row 1: LTV + Forecasting headline cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Donor LTV */}
+                <div className="card p-6 border-t-[3px] border-t-brand-600">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Icon name="heart" size={18} stroke="#002d74" />
+                    <h3 className="font-display text-sm font-bold text-black">Donor Lifetime Value</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-1">Your LTV</div>
+                      <div className="font-display text-3xl font-extrabold tabular text-brand-600">{fmt(Math.round(ltv))}</div>
+                      <div className="text-[10px] text-muted mt-0.5">per donor over lifetime</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-1">vs {compLabel.length > 16 ? compLabel.slice(0,14) + '…' : compLabel}</div>
+                      <div className="font-display text-3xl font-extrabold tabular text-gold-400">{fmt(Math.round(mktLtv))}</div>
+                      <ChangeBadge val={ltvDiff} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+                    <div>
+                      <div className="text-[10px] text-muted">Avg Lifespan</div>
+                      <div className="text-sm font-bold tabular text-black">{avgLifespan.toFixed(1)} yrs</div>
+                      <div className="text-[9px] text-muted">Mkt: {mktLifespan.toFixed(1)} yrs</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-muted">Total LTV (all donors)</div>
+                      <div className="text-sm font-bold tabular text-black">{fmt(Math.round(projectedLtvTotal))}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-muted">Annual Value at Risk</div>
+                      <div className="text-sm font-bold tabular text-bad">{fmt(Math.round(annualValueAtRisk))}</div>
+                      <div className="text-[9px] text-muted">from {fmtN(o.lapsed)} lapsed</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Method Dependency Risk */}
+                <div className="card p-6 border-t-[3px]" style={{ borderTopColor: riskColor }}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Icon name="shield-alert" size={18} stroke={riskColor} />
+                    <h3 className="font-display text-sm font-bold text-black">Method Dependency Risk</h3>
+                  </div>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-20 h-20 rounded-full border-[6px] flex items-center justify-center" style={{ borderColor: riskColor }}>
+                      <div className="text-center">
+                        <div className="text-lg font-extrabold" style={{ color: riskColor }}>{riskLevel}</div>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-700 leading-relaxed">
+                        <strong>{topMethod.method}</strong> accounts for <strong>{topMethod.pct}%</strong> of your income ({fmt(Math.round(topMethodImpact))}).
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        If {topMethod.method} dropped 20%, you'd lose <strong className="text-bad">{fmt(Math.round(ifDropped20))}</strong> annually.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-gray-100">
+                    <div className="text-[10px] font-semibold uppercase text-muted mb-2">Concentration Index (HHI)</div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-3 rounded-full bg-gray-100 relative overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: Math.min(hhi / 40, 100) + '%', background: riskColor }} />
+                        {/* Threshold markers */}
+                        <div className="absolute top-0 h-full w-px bg-gray-400" style={{ left: '37.5%' }} title="Moderate threshold" />
+                        <div className="absolute top-0 h-full w-px bg-gray-400" style={{ left: '62.5%' }} title="High threshold" />
+                      </div>
+                      <span className="text-xs font-bold tabular" style={{ color: riskColor }}>{Math.round(hhi)}</span>
+                    </div>
+                    <div className="flex justify-between text-[9px] text-muted mt-1">
+                      <span>Diversified</span>
+                      <span>Moderate</span>
+                      <span>Concentrated</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 space-y-1.5">
+                    {o.methods.map((m, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted w-24 truncate">{m.method}</span>
+                        <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: m.pct + '%', background: m.pct > 25 ? riskColor : '#002d74' }} />
+                        </div>
+                        <span className="text-[10px] font-semibold tabular w-8 text-right">{m.pct}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 2: Income Forecast Chart */}
+              <div className="card p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Icon name="trending-up" size={18} stroke="#002d74" />
+                    <h3 className="font-display text-sm font-bold text-black">Income Forecast</h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-muted">Avg annual growth:</span>
+                    <span className="text-xs font-bold text-brand-600">{growthRate.toFixed(1)}%</span>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={forecastData}>
+                    <defs>
+                      <linearGradient id="fGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#002d74" stopOpacity={0.12} />
+                        <stop offset="100%" stopColor="#002d74" stopOpacity={0.01} />
+                      </linearGradient>
+                      <linearGradient id="fGradF" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ffb548" stopOpacity={0.15} />
+                        <stop offset="100%" stopColor="#ffb548" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" tick={{ fontSize:12, fill:'#9CA3AF' }} axisLine={false} tickLine={false} />
+                    <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={60} />
+                    <Tooltip content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0].payload;
+                      return <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 16px rgba(0,0,0,0.1)', fontSize:12 }}>
+                        <div style={{ fontWeight:700, marginBottom:4 }}>{label} {d.type === 'forecast' ? '(Projected)' : ''}</div>
+                        <div>Income: <strong>{fmt(d.income)}</strong></div>
+                        {d.low && <div style={{ color:'#6b7280' }}>Range: {fmt(d.low)} – {fmt(d.high)}</div>}
+                      </div>;
+                    }} />
+                    <Area type="monotone" dataKey="income" stroke="#002d74" strokeWidth={2.5} fill="url(#fGrad)"
+                      dot={(props) => {
+                        const d = forecastData[props.index];
+                        return <circle cx={props.cx} cy={props.cy} r={d?.type === 'forecast' ? 5 : 4}
+                          fill={d?.type === 'forecast' ? '#ffb548' : '#002d74'} stroke="#fff" strokeWidth={2} />;
+                      }}
+                      strokeDasharray={(entry) => '0'}
+                    />
+                    {/* Confidence band for forecast years */}
+                    <Area type="monotone" dataKey="high" stroke="none" fill="url(#fGradF)" />
+                    <Area type="monotone" dataKey="low" stroke="none" fill="#fff" />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+                  <div className="bg-gold-50 rounded-lg p-4">
+                    <div className="text-[10px] font-semibold uppercase text-muted mb-1">Projected 2025</div>
+                    <div className="font-display text-xl font-extrabold tabular text-black">{fmt(Math.round(forecast2025))}</div>
+                    <div className="text-[10px] text-muted">Range: {fmt(Math.round(forecast2025 - stdErr * 1.5))} – {fmt(Math.round(forecast2025 + stdErr * 1.5))}</div>
+                  </div>
+                  <div className="bg-brand-50 rounded-lg p-4">
+                    <div className="text-[10px] font-semibold uppercase text-muted mb-1">Projected 2026</div>
+                    <div className="font-display text-xl font-extrabold tabular text-black">{fmt(Math.round(forecast2026))}</div>
+                    <div className="text-[10px] text-muted">Range: {fmt(Math.round(forecast2026 - stdErr * 2))} – {fmt(Math.round(forecast2026 + stdErr * 2))}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: Percentile Rankings */}
+              <div className="card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Icon name="bar-chart-horizontal" size={18} stroke="#002d74" />
+                  <h3 className="font-display text-sm font-bold text-black">Percentile Rankings</h3>
+                  <span className="text-[10px] text-muted ml-1">vs all {o.band} organisations</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                  {percentiles.map((p, i) => (
+                    <div key={i}>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-xs font-medium text-gray-700">{p.metric}</span>
+                        <span className="text-xs font-bold tabular" style={{ color: p.pct >= 60 ? '#059669' : p.pct >= 40 ? '#ffb548' : '#dc2626' }}>
+                          {p.pct}th percentile
+                        </span>
+                      </div>
+                      <div className="h-3 rounded-full bg-gray-100 relative overflow-hidden">
+                        <div className="h-full rounded-full bar-fill transition-all" style={{ width: p.pct + '%', background: p.color, animationDelay: (i * 0.06) + 's' }} />
+                        {/* Median marker */}
+                        <div className="absolute top-0 h-full w-0.5 bg-gray-400/60" style={{ left: '50%' }} />
+                      </div>
+                      <div className="flex justify-between text-[8px] text-muted mt-0.5">
+                        <span>Bottom</span>
+                        <span>Median</span>
+                        <span>Top</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 pt-4 border-t border-gray-100">
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'Above Median', val: percentiles.filter(p => p.pct > 50).length, total: percentiles.length, color: '#059669' },
+                      { label: 'Top Quartile', val: percentiles.filter(p => p.pct >= 75).length, total: percentiles.length, color: '#002d74' },
+                      { label: 'Needs Attention', val: percentiles.filter(p => p.pct < 40).length, total: percentiles.length, color: '#dc2626' },
+                    ].map((s, i) => (
+                      <div key={i} className="text-center p-3 rounded-lg bg-gray-50">
+                        <div className="text-2xl font-extrabold tabular" style={{ color: s.color }}>{s.val}/{s.total}</div>
+                        <div className="text-[10px] text-muted mt-0.5">{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           );
-        })}
+        })()}
+
+        {/* ── SUB-TAB: HISTORY ────────────────── */}
+        {subTab === 'history' && (
+          <div className="space-y-5 anim-in">
+            <div className="card p-5">
+              <h3 className="font-display text-sm font-bold text-black mb-4">Historical Performance</h3>
+              <ResponsiveContainer width="100%" height={320}>
+                <AreaChart data={o.history}>
+                  <defs>
+                    <linearGradient id="hGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#002d74" stopOpacity={0.15} />
+                      <stop offset="100%" stopColor="#002d74" stopOpacity={0.01} />
+                    </linearGradient>
+                    <linearGradient id="hGrad2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffb548" stopOpacity={0.15} />
+                      <stop offset="100%" stopColor="#ffb548" stopOpacity={0.01} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="year" tick={{ fontSize:12, fill:'#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="left" tickFormatter={v => fmt(v)} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={60} />
+                  <YAxis yAxisId="right" orientation="right" tickFormatter={v => fmtN(v)} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={50} />
+                  <Tooltip content={<Tip />} />
+                  <Legend wrapperStyle={{ fontSize:12 }} />
+                  <Area yAxisId="left" type="monotone" dataKey="income" name="Income" stroke="#002d74" strokeWidth={2.5} fill="url(#hGrad)"
+                    dot={{ r:4, fill:'#002d74', stroke:'#fff', strokeWidth:2 }} />
+                  <Area yAxisId="right" type="monotone" dataKey="gifts" name="Gifts" stroke="#ffb548" strokeWidth={2} fill="url(#hGrad2)"
+                    dot={{ r:3, fill:'#ffb548', stroke:'#fff', strokeWidth:2 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Year by Year Table */}
+            <div className="card p-5">
+              <h3 className="font-display text-sm font-bold text-black mb-4">Year-by-Year Summary</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-2 px-3 text-[10px] font-bold uppercase text-muted">Year</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-bold uppercase text-muted">Income</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-bold uppercase text-muted">Gifts</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-bold uppercase text-muted">Retention</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-bold uppercase text-muted">YoY Growth</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {o.history.map((h, i) => {
+                      const prevH = i > 0 ? o.history[i-1] : null;
+                      const growth = prevH ? pctChange(h.income, prevH.income) : null;
+                      return (
+                        <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                          <td className="py-2.5 px-3 font-bold text-black">{h.year}</td>
+                          <td className="py-2.5 px-3 text-right tabular font-semibold">{fmt(h.income)}</td>
+                          <td className="py-2.5 px-3 text-right tabular">{fmtN(h.gifts)}</td>
+                          <td className="py-2.5 px-3 text-right tabular">{h.retention}%</td>
+                          <td className="py-2.5 px-3 text-right">{growth !== null ? <ChangeBadge val={growth} /> : <span className="text-muted">—</span>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  /* ── TAB BAR ──────────────────────────── */
-  function TabBar({ tabs, active, onSelect }) {
-    return (
-      <div className="card mb-6 px-2 flex gap-0 overflow-x-auto" style={{ borderRadius: 12 }}>
-        {tabs.map((tab, i) => (
-          <button key={i} onClick={() => onSelect(i)}
-            className={`tab-btn flex items-center gap-2 ${active === i ? 'active' : ''}`}>
-            <span className="text-sm">{tab.icon}</span>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  /* ── MAIN APP ─────────────────────────── */
+  /* ═══════════════════════════════════════════
+     APP SHELL
+     ═══════════════════════════════════════════ */
   function App() {
-    const [activeTab, setActiveTab] = useState(0);
-    const curr = MOCK_MARKET[1];
-    const prev = MOCK_MARKET[0];
-    const yoyIncome = ((curr.total_income - prev.total_income) / prev.total_income) * 100;
-    const yoyGifts = ((curr.total_gifts - prev.total_gifts) / prev.total_gifts) * 100;
-    const totalMethodIncome = MOCK_METHODS.reduce((s, m) => s + m.income, 0);
-    const pieMethods = MOCK_METHODS.map(m => ({ name: m.method, value: m.income }));
-
-    const tabs = [
-      { icon: '📊', label: 'Overview' },
-      { icon: '🎯', label: 'By Method' },
-      { icon: '🏢', label: 'By Sector' },
-      { icon: '📈', label: 'Benchmarking' },
-      { icon: '⚡', label: 'My Organisation' },
-    ];
+    const [tab, setTab] = useState(0);
+    const [sideOpen, setSideOpen] = useState(false);
+    const TABS = [OverviewTab, ByMethodTab, BySectorTab, MyOrgTab];
+    const ActiveTab = TABS[tab];
 
     return (
-      <div className="font-sans min-h-screen">
-        {/* ─── HEADER ─────────────────────── */}
-        <header style={{ background: 'linear-gradient(135deg, #001a4d 0%, #002C74 60%, #003a99 100%)' }}
-                className="px-6 sm:px-10 py-6 relative overflow-hidden">
-          {/* Subtle dot pattern */}
-          <div className="absolute inset-0 opacity-10" style={{
-            backgroundImage: 'radial-gradient(rgba(255,255,255,0.3) 1px, transparent 1px)',
-            backgroundSize: '24px 24px'
-          }} />
-          <div className="relative z-10 max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
+      <div className="flex min-h-screen">
+        <Sidebar tab={tab} setTab={setTab} open={sideOpen} setOpen={setSideOpen} />
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top bar (mobile) */}
+          <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+            <button onClick={() => setSideOpen(true)} className="p-2 rounded-lg hover:bg-gray-100">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h14M3 10h14M3 14h14"/></svg>
+            </button>
+            <span className="font-display text-lg font-bold text-brand-600">IGI</span>
+            <div className="w-8" />
+          </header>
+          {/* Page header */}
+          <div className="px-6 pt-6 pb-2 flex items-center justify-between">
             <div>
-              <h1 className="font-heading text-xl font-black text-white tracking-tight leading-tight">
-                Irish Giving Index
-              </h1>
-              <span className="text-[10px] font-bold uppercase tracking-[2.5px] text-amber-300/80">Annual Dashboard</span>
-            </div>
-            <div className="flex items-center gap-5">
-              <select className="bg-white/10 border border-white/20 text-white text-sm font-medium rounded-lg px-4 py-2 cursor-pointer appearance-none pr-9"
-                      style={{
-                        backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='%23fff'/%3E%3C/svg%3E\")",
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'right 12px center'
-                      }}>
-                <option>2024</option>
-                <option>2023</option>
-              </select>
-              <div className="text-right hidden sm:block">
-                <div className="text-[10px] text-white/50 uppercase tracking-wide">Signed in as</div>
-                <div className="text-sm font-bold text-white">Danny Abels</div>
-                <span className="inline-block text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 mt-0.5">Contributor</span>
-              </div>
+              <h1 className="font-display text-2xl font-bold text-brand-600">{NAV[tab].label}</h1>
+              <p className="text-xs text-muted mt-0.5">Irish Giving Index — 2024 Annual Data</p>
             </div>
           </div>
-        </header>
-
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 py-6">
-          {/* ─── KPI CARDS ──────────────────── */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <KpiCard label="Total Fundraised Income" value={fmt(curr.total_income)} change={yoyIncome} icon="💰" delay="delay-1" accent="navy" />
-            <KpiCard label="Participating Organisations" value={fmtN(curr.org_count)} change={2.0} icon="🏛️" delay="delay-2" accent="gold" />
-            <KpiCard label="Average Income per Org" value={fmt(curr.avg_income)} change={6.2} icon="📊" delay="delay-3" accent="teal" />
-            <KpiCard label="Total Individual Gifts" value={fmtN(curr.total_gifts)} change={yoyGifts} icon="🎁" delay="delay-4" accent="green" />
-          </div>
-
-          {/* ─── TABS ───────────────────────── */}
-          <TabBar tabs={tabs} active={activeTab} onSelect={setActiveTab} />
-
-          {/* ══ TAB 0: OVERVIEW ═══════════════ */}
-          {activeTab === 0 && (
-            <div className="animate-in space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Income Trend */}
-                <Card title="Income Trend" subtitle="5-year total fundraised income" icon="📈" className="lg:col-span-2">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={MOCK_TREND}>
-                      <defs>
-                        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#002C74" stopOpacity={0.15} />
-                          <stop offset="100%" stopColor="#002C74" stopOpacity={0.01} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="year" tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                      <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={70} />
-                      <Tooltip content={<BrandTooltip formatter={fmt} />} />
-                      <Area type="monotone" dataKey="income" name="Total Income" stroke="#002C74" strokeWidth={2.5} fill="url(#areaGrad)"
-                            dot={{ r: 4, fill: '#002C74', stroke: '#fff', strokeWidth: 2 }}
-                            activeDot={{ r: 6, fill: '#002C74', stroke: '#fff', strokeWidth: 2 }} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </Card>
-
-                {/* Method Mix Pie */}
-                <Card title="Method Mix" subtitle="Income by fundraising method" icon="🎯">
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
-                      <Pie data={pieMethods} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={2} dataKey="value" strokeWidth={0}>
-                        {pieMethods.map((_, i) => <Cell key={i} fill={BRAND_COLORS[i % BRAND_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip content={<BrandTooltip formatter={fmt} />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 pt-3 border-t border-gray-100">
-                    {MOCK_METHODS.slice(0, 6).map((m, i) => (
-                      <div key={i} className="flex items-center gap-2 text-[11px] text-gray-500">
-                        <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: BRAND_COLORS[i] }} />
-                        {m.method}
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-
-              {/* Row 2: YoY + Insights */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card title="Year-on-Year Comparison" subtitle="Total income by year" icon="🔄">
-                  <ResponsiveContainer width="100%" height={260}>
-                    <BarChart data={MOCK_MARKET} barGap={12}>
-                      <defs>
-                        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#002C74" />
-                          <stop offset="100%" stopColor="#002C74" stopOpacity={0.7} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="year" tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                      <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={70} />
-                      <Tooltip content={<BrandTooltip formatter={fmt} />} />
-                      <Bar dataKey="total_income" name="Total Income" fill="url(#barGrad)" radius={[6, 6, 0, 0]} maxBarSize={56} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Card>
-
-                <Card title="Key Insights" subtitle="2024 highlights" icon="💡">
-                  <div className="space-y-3">
-                    {[
-                      { icon: '🚀', title: 'Strong Income Growth', desc: `Total fundraised income grew ${yoyIncome.toFixed(1)}% year-on-year, reaching €${(curr.total_income/1e6).toFixed(0)}M in 2024.`, color: '#ECFDF5' },
-                      { icon: '🎯', title: 'Major Gifts Lead', desc: 'Major Gifts account for 25.6% of all income, followed by Regular Giving at 20.2%.', color: '#EFF6FF' },
-                      { icon: '📈', title: 'Donor Base Growing', desc: `Total individual gifts up ${yoyGifts.toFixed(1)}% with 4.58M gifts recorded across all methods.`, color: '#FFFBEB' },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-start gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors" style={{ background: item.color }}>
-                        <span className="text-xl flex-shrink-0 mt-0.5">{item.icon}</span>
-                        <div>
-                          <div className="text-sm font-bold text-gray-900 mb-0.5">{item.title}</div>
-                          <div className="text-xs text-gray-500 leading-relaxed">{item.desc}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* ══ TAB 1: BY METHOD ═══════════════ */}
-          {activeTab === 1 && (
-            <div className="animate-in space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <Card title="Income by Fundraising Method" subtitle="Horizontal comparison" icon="📊" className="lg:col-span-3">
-                  <ResponsiveContainer width="100%" height={380}>
-                    <BarChart data={MOCK_METHODS} layout="vertical" margin={{ left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                      <XAxis type="number" tickFormatter={v => fmt(v)} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                      <YAxis type="category" dataKey="method" width={130} tick={{ fontSize: 11, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                      <Tooltip content={<BrandTooltip formatter={fmt} />} />
-                      <Bar dataKey="income" name="Income" radius={[0, 6, 6, 0]} maxBarSize={24}>
-                        {MOCK_METHODS.map((_, i) => <Cell key={i} fill={BRAND_COLORS[i % BRAND_COLORS.length]} />)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Card>
-
-                <Card title="Method Breakdown" subtitle="Share of total income" icon="📋" className="lg:col-span-2">
-                  {MOCK_METHODS.map((m, i) => (
-                    <MethodBar key={i} name={m.method} value={m.income} total={totalMethodIncome} index={i} />
-                  ))}
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* ══ TAB 2: BY SECTOR ═══════════════ */}
-          {activeTab === 2 && (
-            <div className="animate-in space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card title="Sector Distribution" subtitle="Income and organisation count by subsector" icon="🏢" className="lg:col-span-2">
-                  <SectorTable data={MOCK_SECTORS} />
-                </Card>
-                <Card title="Top Sectors" subtitle="Income distribution" icon="🏆">
-                  <ResponsiveContainer width="100%" height={320}>
-                    <PieChart>
-                      <Pie data={MOCK_SECTORS.slice(0, 8)} cx="50%" cy="50%" outerRadius={110} innerRadius={45} paddingAngle={2} dataKey="income" strokeWidth={0}>
-                        {MOCK_SECTORS.slice(0, 8).map((_, i) => <Cell key={i} fill={BRAND_COLORS[i % BRAND_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip content={<BrandTooltip formatter={fmt} />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* ══ TAB 3: BENCHMARKING ════════════ */}
-          {activeTab === 3 && (
-            <div className="animate-in space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card title="Performance Radar" subtitle="Your organisation vs market average" icon="🎯">
-                  <ResponsiveContainer width="100%" height={340}>
-                    <RadarChart cx="50%" cy="50%" outerRadius="68%" data={MOCK_RADAR}>
-                      <PolarGrid stroke="#E5E7EB" />
-                      <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: '#6B7280' }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                      <Radar name="Your Org" dataKey="org" stroke="#002C74" fill="#002C74" fillOpacity={0.15} strokeWidth={2} dot={{ r: 3, fill: '#002C74' }} />
-                      <Radar name="Market Avg" dataKey="market" stroke="#F0A500" fill="#F0A500" fillOpacity={0.08} strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3, fill: '#F0A500' }} />
-                      <Tooltip content={<BrandTooltip />} />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </Card>
-
-                <Card title="Size Band Benchmarks" subtitle="Average income by organisation size" icon="📏">
-                  <div className="space-y-4">
-                    {[
-                      { label: 'Small (Under €25K)', income: '€18.2K', count: 32, pct: 32, color: '#0e7c86' },
-                      { label: 'Medium (€25K – €100K)', income: '€62.8K', count: 42, pct: 58, color: '#002C74' },
-                      { label: 'Large (Over €100K)', income: '€385K', count: 26, pct: 85, color: '#F0A500' },
-                    ].map((band, i) => (
-                      <div key={i} className="p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors bg-gray-50/50">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-bold text-gray-700">{band.label}</span>
-                          <span className="text-sm font-black tabular" style={{ color: band.color }}>{band.income}</span>
-                        </div>
-                        <div className="h-2 rounded-full overflow-hidden bg-gray-200">
-                          <div className="h-full rounded-full bar-fill" style={{ width: band.pct + '%', background: band.color, animationDelay: (i * 0.15) + 's' }} />
-                        </div>
-                        <div className="text-[10px] text-gray-400 mt-1.5">{band.count} organisations in this band</div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* ══ TAB 4: MY ORG ══════════════════ */}
-          {activeTab === 4 && (
-            <div className="animate-in space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card title="Your Performance vs Market" subtitle="Side-by-side comparison" icon="⚡" className="lg:col-span-2">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={[
-                      { metric: 'Income', org: 420000, market: 967000000 / 100 },
-                      { metric: 'Gifts', org: 8500, market: 4580000 / 100 },
-                      { metric: 'Avg Gift', org: 49, market: 42 },
-                      { metric: 'Retention %', org: 71, market: 58 },
-                    ]} barGap={4}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="metric" tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                      <Tooltip content={<BrandTooltip />} />
-                      <Bar dataKey="org" name="Your Org" fill="#002C74" radius={[4, 4, 0, 0]} maxBarSize={36} />
-                      <Bar dataKey="market" name="Market Avg" fill="#F0A500" radius={[4, 4, 0, 0]} maxBarSize={36} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Card>
-
-                <Card title="Your Organisation" subtitle="Key metrics at a glance" icon="🏠">
-                  <div className="space-y-0">
-                    {[
-                      { label: 'Your Income', value: '€420K', change: '+12.3%', up: true },
-                      { label: 'Total Gifts', value: '8,500', change: '+8.1%', up: true },
-                      { label: 'Average Gift Size', value: '€49.41', change: '+3.8%', up: true },
-                      { label: 'Donor Retention', value: '71%', change: '-2.1%', up: false },
-                      { label: 'Cost per €1 Raised', value: '€0.22', change: '-5.0%', up: true },
-                    ].map((s, i) => (
-                      <div key={i} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                        <span className="text-xs font-medium text-gray-500">{s.label}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-black tabular text-gray-900">{s.value}</span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${s.up ? 'badge-up' : 'badge-down'}`}>{s.change}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ─── FOOTER ─────────────────────── */}
-        <footer className="mt-8 py-6 border-t border-gray-200 bg-white">
-          <div className="max-w-7xl mx-auto px-6 sm:px-10 flex items-center justify-between text-xs text-gray-400">
-            <span>© 2026 2into3 · Irish Giving Index. All rights reserved.</span>
+          {/* Content */}
+          <main className="flex-1 px-6 pb-8" key={tab}>
+            <ActiveTab />
+          </main>
+          {/* Footer */}
+          <footer className="px-6 py-4 border-t border-gray-200 text-xs text-muted flex justify-between">
+            <span>© 2026 2into3 · Irish Giving Index</span>
             <span>Data updated March 2026</span>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </div>
     );
   }
 
   ReactDOM.createRoot(document.getElementById('igi-root')).render(<App />);
+  // Init lucide icons after first render
+  setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
 })();
 </script>
 </body>
