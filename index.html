@@ -126,13 +126,25 @@ tailwind.config = {
      ═══════════════════════════════════════════ */
   const SB_URL = 'https://faiyintmsnfjitertgom.supabase.co/rest/v1';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhaXlpbnRtc25maml0ZXJ0Z29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjIzNDAsImV4cCI6MjA4ODE5ODM0MH0.aqC_UZlWOxULLyoUlf2hVZNuOqRbZpaUtMRt63mNwqc';
+  // Fetch from Supabase REST API — uses user token if available, anon key otherwise
+  let SB_USER_TOKEN = null;
   async function sbFetch(view, orderBy) {
     const url = `${SB_URL}/${view}?select=*&order=${orderBy}`;
     const res = await fetch(url, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_USER_TOKEN || SB_KEY}` }
     });
     if (!res.ok) throw new Error(`${view}: ${res.status} ${res.statusText}`);
     return res.json();
+  }
+  // Fetch user profile using their JWT token
+  async function sbFetchProfile(token) {
+    const url = `${SB_URL}/profiles?select=*`;
+    const res = await fetch(url, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows.length > 0 ? rows[0] : null;
   }
 
   /* Data context — all views loaded once, shared across tabs */
@@ -147,6 +159,33 @@ tailwind.config = {
     useEffect(() => {
       async function fetchAll() {
         try {
+          // Check for auth token in URL hash (passed from WordPress parent)
+          const hash = window.location.hash;
+          if (hash && hash.includes('token=')) {
+            const params = new URLSearchParams(hash.substring(1));
+            const token = params.get('token');
+            if (token) {
+              SB_USER_TOKEN = token;
+              // Clean the hash so token isn't visible
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          }
+
+          // Also listen for postMessage from parent (backup method)
+          window.addEventListener('message', function handler(event) {
+            if (event.origin !== 'https://2into3.com') return;
+            if (event.data?.type === 'supabase-token' && event.data.token) {
+              SB_USER_TOKEN = event.data.token;
+              sbFetchProfile(event.data.token).then(prof => { if (prof) setProfile(prof); });
+              window.removeEventListener('message', handler);
+            }
+          });
+          // Request token from parent
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: 'igi-auth-request' }, 'https://2into3.com');
+          }
+
+          // Fetch all views in parallel (works with anon key regardless of auth)
           const [market, methods, sectors, geography, bands] = await Promise.all([
             sbFetch('v_market_annual', 'year'),
             sbFetch('v_market_by_method_annual', 'year,method_name'),
@@ -155,6 +194,12 @@ tailwind.config = {
             sbFetch('v_size_band_benchmarks_annual', 'year,size_band'),
           ]);
           setData({ market, methods, sectors, geography, bands });
+
+          // If we have a user token, fetch their profile
+          if (SB_USER_TOKEN) {
+            const prof = await sbFetchProfile(SB_USER_TOKEN);
+            if (prof) setProfile(prof);
+          }
         } catch (err) {
           console.error('Fetch error:', err);
           setError(err.message);
