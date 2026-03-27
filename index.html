@@ -502,7 +502,7 @@ tailwind.config = {
   /* ═══════════════════════════════════════════
      TAB 1: OVERVIEW — placeholder
      ═══════════════════════════════════════════ */
-  function OverviewTab({ liveData }) {
+  function OverviewTab({ liveData, selectedYear }) {
     // Use live Supabase data if available, fall back to mock
     const useLive = liveData && liveData.curr;
     const curr = useLive ? liveData.curr : MOCK_MARKET[4];
@@ -570,10 +570,10 @@ tailwind.config = {
             <h3 className="font-display text-sm font-bold text-black mb-4">Market Pulse</h3>
             <div className="space-y-3">
               {[
-                { icon: 'trending-up', text: `The sector raised ${fmt(curr.total_income)} in 2024, up ${yoyInc.toFixed(1)}% on 2023.`, bg: 'bg-brand-50' },
-                { icon: 'target', text: `Major Gifts drove 25.6% of all income, the single largest method.`, bg: 'bg-gold-50' },
-                { icon: 'landmark', text: `${curr.org_count} organisations participated, up from ${prev.org_count}.`, bg: 'bg-emerald-50' },
-                { icon: 'gift', text: `${fmtN(curr.total_gifts)} individual gifts recorded, up ${yoyGift.toFixed(1)}% YoY.`, bg: 'bg-blue-50' },
+                { icon: 'trending-up', text: `The sector raised ${fmt(curr.total_income)} in ${selectedYear || '2024'}${prev ? `, ${yoyInc >= 0 ? 'up' : 'down'} ${Math.abs(yoyInc).toFixed(1)}% on ${Number(selectedYear || 2024) - 1}` : ''}.`, bg: 'bg-brand-50' },
+                { icon: 'target', text: `${methods[0]?.method || 'Major Gifts'} is the largest method at ${methods[0]?.pct?.toFixed(1) || '25.6'}% of all income (${fmt(methods[0]?.income || 0)}).`, bg: 'bg-gold-50' },
+                { icon: 'landmark', text: `${curr.org_count} organisations participated${prev ? `, ${curr.org_count > prev.org_count ? 'up' : 'down'} from ${prev.org_count}` : ''}.`, bg: 'bg-emerald-50' },
+                { icon: 'gift', text: `${fmtN(curr.total_gifts)} individual gifts recorded${prev ? `, ${yoyGift >= 0 ? 'up' : 'down'} ${Math.abs(yoyGift).toFixed(1)}% YoY` : ''}.`, bg: 'bg-blue-50' },
               ].map((p, i) => (
                 <div key={i} className={`${p.bg} rounded-xl p-3.5 flex items-start gap-3`}>
                   <Icon name={p.icon} size={20} className="flex-shrink-0 mt-0.5" stroke="#002d74" />
@@ -648,17 +648,22 @@ tailwind.config = {
         <div className="card p-5 anim-in anim-d3">
           <h3 className="font-display text-sm font-bold text-black mb-4">Year-on-Year Comparison</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={[
-              { metric: 'Total Income', '2023': prev.total_income, '2024': curr.total_income },
-              { metric: 'Avg Income', '2023': prev.avg_income, '2024': curr.avg_income },
+            <BarChart data={prev ? [
+              { metric: 'Total Income', prev: prev.total_income, curr: curr.total_income },
+              { metric: 'Avg Income/Org', prev: prev.avg_income, curr: curr.avg_income },
+              { metric: 'Org Count', prev: prev.org_count, curr: curr.org_count },
+              { metric: 'Total Gifts', prev: prev.total_gifts, curr: curr.total_gifts },
+            ] : [
+              { metric: 'Total Income', curr: curr.total_income },
+              { metric: 'Avg Income/Org', curr: curr.avg_income },
             ]} barGap={8}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="metric" tick={{ fontSize:12, fill:'#6b7280' }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize:11, fill:'#9CA3AF' }} axisLine={false} tickLine={false} width={70} />
               <Tooltip content={<Tip />} />
               <Legend wrapperStyle={{ fontSize:12 }} />
-              <Bar dataKey="2023" fill="#b8c9eb" radius={[6,6,0,0]} maxBarSize={52} label={<BarLabelTop />} />
-              <Bar dataKey="2024" fill="#002d74" radius={[6,6,0,0]} maxBarSize={52} label={<BarLabelTop />} />
+              {prev && <Bar dataKey="prev" name={String(Number(selectedYear || 2024) - 1)} fill="#b8c9eb" radius={[6,6,0,0]} maxBarSize={52} label={<BarLabelTop />} />}
+              <Bar dataKey="curr" name={selectedYear || '2024'} fill="#002d74" radius={[6,6,0,0]} maxBarSize={52} label={<BarLabelTop />} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -980,42 +985,98 @@ tailwind.config = {
     const [subTab, setSubTab] = useState('performance');
     const [compareKey, setCompareKey] = useState('market');
 
-    /* ── COMPARISON DATASETS ──────────────────
-       Each key maps to a benchmark profile.
-       When Supabase is connected, these will be fetched dynamically
-       based on the selected comparison. For now: mock data.
-    */
-    const COMPARE_OPTIONS = [
-      { key: 'market', label: 'Market Average (All Orgs)', group: 'Market' },
-      { key: 'band_small', label: 'Small Orgs (Under €25K)', group: 'Size Band' },
-      { key: 'band_medium', label: 'Medium Orgs (€25K–€100K)', group: 'Size Band' },
-      { key: 'band_large', label: 'Large Orgs (Over €100K)', group: 'Size Band' },
-      { key: 'sector_health', label: 'Health Sector', group: 'Sector' },
-      { key: 'sector_children', label: 'Children & Youth', group: 'Sector' },
-      { key: 'sector_intl', label: 'International Development', group: 'Sector' },
-      { key: 'sector_disability', label: 'Disability', group: 'Sector' },
-      { key: 'sector_community', label: 'Community Development', group: 'Sector' },
-      { key: 'sector_housing', label: 'Housing & Homelessness', group: 'Sector' },
-      { key: 'top_quartile', label: 'Top 25% Performers', group: 'Ranking' },
-      { key: 'year_2023', label: 'Your Org in 2023', group: 'Time' },
-    ];
-    const COMPARE_DATA = {
-      market:         { income: 9670000, gifts: 45800, avg_gift: 42, retention: 58, cpe: 0.25, methods: MKT_MIX, retTrend: [52,54,55,57,58] },
-      band_small:     { income: 18200, gifts: 520, avg_gift: 35, retention: 48, cpe: 0.30, methods: [{ method:'Community',pct:30 },{ method:'Direct Mail',pct:25 },{ method:'Regular Giving',pct:20 },{ method:'Corporate',pct:12 },{ method:'Other',pct:13 }], retTrend: [42,44,45,47,48] },
-      band_medium:    { income: 62800, gifts: 1840, avg_gift: 68, retention: 55, cpe: 0.25, methods: [{ method:'Regular Giving',pct:28 },{ method:'Corporate',pct:22 },{ method:'Community',pct:18 },{ method:'Major Gifts',pct:15 },{ method:'Other',pct:17 }], retTrend: [48,50,52,54,55] },
-      band_large:     { income: 385000, gifts: 8200, avg_gift: 142, retention: 62, cpe: 0.23, methods: [{ method:'Major Gifts',pct:32 },{ method:'Regular Giving',pct:22 },{ method:'Corporate',pct:16 },{ method:'Trusts & Foundations',pct:14 },{ method:'Other',pct:16 }], retTrend: [55,57,58,60,62] },
-      sector_health:  { income: 11000000, gifts: 62000, avg_gift: 55, retention: 61, cpe: 0.22, methods: [{ method:'Major Gifts',pct:30 },{ method:'Regular Giving',pct:25 },{ method:'Corporate',pct:18 },{ method:'Community',pct:12 },{ method:'Other',pct:15 }], retTrend: [54,56,58,59,61] },
-      sector_children:{ income: 11142857, gifts: 58000, avg_gift: 48, retention: 56, cpe: 0.24, methods: [{ method:'Regular Giving',pct:32 },{ method:'Community',pct:22 },{ method:'Corporate',pct:16 },{ method:'Major Gifts',pct:14 },{ method:'Other',pct:16 }], retTrend: [50,52,53,55,56] },
-      sector_intl:    { income: 11000000, gifts: 72000, avg_gift: 38, retention: 54, cpe: 0.26, methods: [{ method:'Regular Giving',pct:28 },{ method:'Direct Mail',pct:22 },{ method:'Trusts & Foundations',pct:20 },{ method:'Major Gifts',pct:15 },{ method:'Other',pct:15 }], retTrend: [48,50,51,53,54] },
-      sector_disability:{ income: 9818181, gifts: 48000, avg_gift: 42, retention: 57, cpe: 0.25, methods: [{ method:'Regular Giving',pct:30 },{ method:'Community',pct:25 },{ method:'Corporate',pct:15 },{ method:'Trusts & Foundations',pct:15 },{ method:'Other',pct:15 }], retTrend: [50,52,54,55,57] },
-      sector_community:{ income: 9600000, gifts: 45000, avg_gift: 40, retention: 52, cpe: 0.28, methods: [{ method:'Community',pct:35 },{ method:'Regular Giving',pct:22 },{ method:'Corporate',pct:15 },{ method:'Direct Mail',pct:13 },{ method:'Other',pct:15 }], retTrend: [45,47,49,51,52] },
-      sector_housing: { income: 9000000, gifts: 38000, avg_gift: 45, retention: 55, cpe: 0.24, methods: [{ method:'Trusts & Foundations',pct:28 },{ method:'Major Gifts',pct:24 },{ method:'Corporate',pct:18 },{ method:'Regular Giving',pct:16 },{ method:'Other',pct:14 }], retTrend: [48,50,52,53,55] },
-      top_quartile:   { income: 680000, gifts: 14200, avg_gift: 95, retention: 74, cpe: 0.18, methods: [{ method:'Major Gifts',pct:28 },{ method:'Regular Giving',pct:24 },{ method:'Corporate',pct:18 },{ method:'Trusts & Foundations',pct:14 },{ method:'Other',pct:16 }], retTrend: [66,68,70,72,74] },
-      year_2023:      { income: 374000, gifts: 7860, avg_gift: 47.58, retention: 72, cpe: 0.24, methods: o.methods, retTrend: [65,67,69,72,72] },
-    };
+    /* ── BUILD COMPARISON OPTIONS + DATA FROM LIVE SUPABASE DATA ── */
+    const { compOptions, compDataMap } = useMemo(() => {
+      const opts = [{ key: 'market', label: 'Market Average (All Orgs)', group: 'Market' }];
+      const dataMap = {};
 
-    const comp = COMPARE_DATA[compareKey];
-    const compLabel = COMPARE_OPTIONS.find(c => c.key === compareKey)?.label || 'Comparison';
+      // Helper: build a method mix from Supabase methods data
+      const buildMethodMix = (methodsArr) => {
+        if (!methodsArr || methodsArr.length === 0) return MKT_MIX;
+        const total = methodsArr.reduce((s, m) => s + m.income, 0);
+        return methodsArr.slice(0, 6).map(m => ({
+          method: m.method, pct: total > 0 ? Math.round(m.income / total * 100) : 0
+        }));
+      };
+
+      if (liveData) {
+        // Market average from live data
+        const mkt = liveData.curr;
+        if (mkt) {
+          const mktGifts = mkt.total_gifts || 1;
+          dataMap.market = {
+            income: mkt.avg_income, gifts: Math.round(mktGifts / mkt.org_count),
+            avg_gift: mktGifts > 0 ? mkt.total_income / mktGifts : 0,
+            retention: 58, cpe: 0.25,
+            methods: buildMethodMix(liveData.methodsData),
+            retTrend: [52,54,55,57,58],
+          };
+        }
+
+        // Size bands from live data
+        if (liveData.bandsData) {
+          liveData.bandsData.forEach(b => {
+            const key = 'band_' + b.band.toLowerCase();
+            opts.push({ key, label: `${b.band} Orgs (${b.label})`, group: 'Size Band' });
+            dataMap[key] = {
+              income: b.inc, gifts: b.gifts || Math.round(b.inc / 50),
+              avg_gift: b.ag || (b.gifts > 0 ? b.inc / b.gifts : 50),
+              retention: b.band === 'Small' ? 48 : b.band === 'Medium' ? 55 : 62,
+              cpe: b.cpe || (b.band === 'Small' ? 0.30 : b.band === 'Medium' ? 0.25 : 0.23),
+              methods: MKT_MIX, retTrend: b.band === 'Small' ? [42,44,45,47,48] : b.band === 'Medium' ? [48,50,52,54,55] : [55,57,58,60,62],
+            };
+          });
+        }
+
+        // Sectors from live data — dynamically built!
+        if (liveData.sectorsData) {
+          liveData.sectorsData.forEach(s => {
+            const key = 'sector_' + s.sector.toLowerCase().replace(/[^a-z]/g, '_');
+            opts.push({ key, label: s.sector, group: 'Sector' });
+            const sGifts = s.gifts || 1;
+            dataMap[key] = {
+              income: s.avg_income || (s.orgs > 0 ? s.income / s.orgs : s.income),
+              gifts: Math.round(sGifts / (s.orgs || 1)),
+              avg_gift: sGifts > 0 ? s.income / sGifts : 0,
+              retention: 55, cpe: 0.25,
+              methods: MKT_MIX, retTrend: [50,52,53,55,55],
+            };
+          });
+        }
+
+        // Previous year comparison
+        if (liveData.prev) {
+          const prevYr = Number(selectedYear) - 1;
+          opts.push({ key: 'prev_year', label: `Market in ${prevYr}`, group: 'Time' });
+          const pGifts = liveData.prev.total_gifts || 1;
+          dataMap.prev_year = {
+            income: liveData.prev.avg_income, gifts: Math.round(pGifts / liveData.prev.org_count),
+            avg_gift: pGifts > 0 ? liveData.prev.total_income / pGifts : 0,
+            retention: 56, cpe: 0.26,
+            methods: MKT_MIX, retTrend: [50,52,53,55,56],
+          };
+        }
+      }
+
+      // Fallback defaults if no live data
+      if (Object.keys(dataMap).length === 0) {
+        dataMap.market = { income: 9670000, gifts: 45800, avg_gift: 42, retention: 58, cpe: 0.25, methods: MKT_MIX, retTrend: [52,54,55,57,58] };
+      }
+
+      // Always add Top Quartile (estimated) and Your Org previous year
+      opts.push({ key: 'top_quartile', label: 'Top 25% Performers', group: 'Ranking' });
+      dataMap.top_quartile = { income: 680000, gifts: 14200, avg_gift: 95, retention: 74, cpe: 0.18,
+        methods: [{ method:'Major Gifts',pct:28 },{ method:'Regular Giving',pct:24 },{ method:'Corporate',pct:18 },{ method:'Trusts & Foundations',pct:14 },{ method:'Other',pct:16 }],
+        retTrend: [66,68,70,72,74] };
+
+      opts.push({ key: 'year_prev_org', label: 'Your Org (Previous Year)', group: 'Time' });
+      dataMap.year_prev_org = { income: o.prev_income, gifts: o.prev_gifts, avg_gift: o.prev_avg_gift, retention: 72, cpe: 0.24, methods: o.methods, retTrend: [65,67,69,72,72] };
+
+      return { compOptions: opts, compDataMap: dataMap };
+    }, [liveData, selectedYear]);
+
+    const comp = compDataMap[compareKey] || compDataMap.market || { income: 0, gifts: 0, avg_gift: 0, retention: 50, cpe: 0.25, methods: MKT_MIX, retTrend: [50,50,50,50,50] };
+    const compLabel = compOptions.find(c => c.key === compareKey)?.label || 'Comparison';
 
     // Derived values using selected comparison
     const incChg = pctChange(o.income, o.prev_income);
@@ -1062,10 +1123,10 @@ tailwind.config = {
             className="bg-white border border-gray-200 text-sm font-semibold rounded-lg px-4 py-2.5 cursor-pointer text-brand-600 shadow-sm hover:border-brand-600 transition focus:outline-none focus:ring-2 focus:ring-brand-600/20 max-w-sm"
             style={{ backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='%23002d74'/%3E%3C/svg%3E\")", backgroundRepeat:'no-repeat', backgroundPosition:'right 12px center', appearance:'none', paddingRight:'36px' }}>
             {(() => {
-              const groups = [...new Set(COMPARE_OPTIONS.map(o => o.group))];
+              const groups = [...new Set(compOptions.map(o => o.group))];
               return groups.map(g => (
                 <optgroup key={g} label={g}>
-                  {COMPARE_OPTIONS.filter(o => o.group === g).map(o => (
+                  {compOptions.filter(o => o.group === g).map(o => (
                     <option key={o.key} value={o.key}>{o.label}</option>
                   ))}
                 </optgroup>
